@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AdAlliance 测试网站 - 用于测试流量生成工具的浏览器指纹伪装和行为模拟效果">
+    <title>AdAlliance - 测试主页</title>
+    <link rel="stylesheet" href="/static/css/public.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <!-- 头部 -->
+        <header>
+            <h1>🎯 AdAlliance 测试网站</h1>
+            <p>用于测试流量生成工具的效果</p>
+        </header>
+
+        <!-- 主内容 -->
+        <main>
+            <!-- 欢迎区域 -->
+            <section class="hero">
+                <h2>欢迎来到测试页面</h2>
+                <p>此页面用于测试和验证以下功能：</p>
+                <ul>
+                    <li>浏览器指纹伪装效果检测</li>
+                    <li>真人行为模拟质量评估</li>
+                    <li>代理池切换效果验证</li>
+                    <li>访问统计和数据分析</li>
+                </ul>
+            </section>
+
+            <!-- 功能说明 -->
+            <section>
+                <h3>📊 追踪的数据</h3>
+                <div class="card">
+                    <h4>基础信息</h4>
+                    <p>IP 地址、访问时间、User-Agent、Referrer</p>
+                </div>
+                <div class="card">
+                    <h4>浏览器指纹</h4>
+                    <p>Canvas 指纹、WebGL 指纹、字体列表、屏幕分辨率、时区、语言</p>
+                </div>
+                <div class="card">
+                    <h4>行为数据</h4>
+                    <p>页面停留时间、滚动深度、鼠标移动轨迹</p>
+                </div>
+            </section>
+
+            <!-- 测试说明 -->
+            <section>
+                <h3>🧪 如何测试</h3>
+                <div class="info-box">
+                    <p><strong>步骤 1：</strong> 访问此页面，追踪器会自动开始记录</p>
+                    <p><strong>步骤 2：</strong> 在页面上进行自然的浏览行为（滚动、鼠标移动）</p>
+                    <p><strong>步骤 3：</strong> 停留一段时间后关闭或跳转到其他页面</p>
+                    <p><strong>步骤 4：</strong> 在管理后台查看追踪数据和真实性评分</p>
+                </div>
+            </section>
+
+            <!-- 其他测试页面 -->
+            <section class="links">
+                <h3>🔗 其他测试页面</h3>
+                <p>探索更多测试场景：</p>
+                <a href="/public/landing.html" class="btn">📄 着陆页测试</a>
+                <a href="/public/ad-page.html" class="btn">📢 广告页测试</a>
+                <a href="/docs" class="btn">📚 API 文档</a>
+            </section>
+
+            <!-- 技术信息 -->
+            <section>
+                <h3>💡 技术实现</h3>
+                <p>本测试系统基于以下技术构建：</p>
+                <ul>
+                    <li><strong>后端：</strong> Python + FastAPI + SQLAlchemy</li>
+                    <li><strong>前端：</strong> 原生 JavaScript + Bootstrap 5</li>
+                    <li><strong>数据库：</strong> SQLite（可扩展到 PostgreSQL）</li>
+                    <li><strong>指纹采集：</strong> Canvas、WebGL、字体检测</li>
+                </ul>
+            </section>
+
+            <!-- 长内容用于测试滚动 -->
+            <section>
+                <h3>📝 关于 AdAllianceTools</h3>
+                <p>
+                    AdAllianceTools 是一款专业的流量生成和测试工具，旨在帮助开发者和营销人员验证网站的访问追踪系统、
+                    广告投放效果以及用户行为分析功能。通过模拟真实用户的浏览行为，包括浏览器指纹伪装、自然的鼠标移动
+                    和滚动行为，AdAllianceTools 能够生成高质量的测试流量。
+                </p>
+                <p>
+                    本测试网站提供了一个完整的追踪和分析平台，能够实时记录访问者的各种数据指标，包括但不限于：
+                    浏览器指纹信息、设备特征、地理位置、行为模式等。通过综合这些数据，系统会计算出一个"真实性评分"，
+                    用于评估访问的质量和真实程度。
+                </p>
+                <p>
+                    无论您是在测试反作弊系统、验证广告追踪效果，还是在进行 A/B 测试，这个平台都能为您提供详细的
+                    数据洞察和分析报告。所有数据都会被安全地存储，并可以通过管理后台进行查看和导出。
+                </p>
+                <p>
+                    系统采用了多层次的异常检测机制，能够识别机器人访问、代理 IP、以及其他可疑行为模式。
+                    这些检测结果会实时反映在真实性评分中，帮助您更好地理解流量质量。
+                </p>
+            </section>
+
+            <!-- 更多内容 -->
+            <section>
+                <h3>🎨 指纹伪装技术</h3>
+                <p>
+                    现代浏览器指纹技术已经发展得非常成熟，可以通过多种维度来识别和追踪用户。主要的指纹采集技术包括：
+                </p>
+                <ul>
+                    <li><strong>Canvas 指纹：</strong> 通过绘制隐藏的 Canvas 元素并读取其内容来生成唯一标识</li>
+                    <li><strong>WebGL 指纹：</strong> 利用 WebGL 渲染器信息来识别设备的图形硬件特征</li>
+                    <li><strong>字体检测：</strong> 检测系统安装的字体列表，不同的字体组合形成独特的指纹</li>
+                    <li><strong>AudioContext：</strong> 音频处理特性也可以用于生成唯一的设备指纹</li>
+                    <li><strong>屏幕特征：</strong> 分辨率、色深、可用屏幕尺寸等信息</li>
+                </ul>
+                <p>
+                    AdAllianceTools 能够模拟不同的浏览器指纹，使每次访问看起来都像是来自不同的真实用户。
+                    这对于测试指纹追踪系统的有效性和准确性非常重要。
+                </p>
+            </section>
+
+            <!-- 底部提示 -->
+            <section>
+                <div class="success-box">
+                    <p>✅ <strong>追踪器已激活：</strong> 您的访问数据正在被记录中。这是正常的测试行为，
+                    所有数据都仅用于测试目的。</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer>
+            <p>&copy; 2025 AdAllianceTools. 保留所有权利。</p>
+            <p>本网站仅用于测试目的</p>
+        </footer>
+    </div>
+
+    <!-- 调试信息（可选） -->
+    <div id="debug-info">
+        <div>追踪状态: <span id="track-status">初始化中...</span></div>
+        <div>Visit ID: <span id="visit-id">-</span></div>
+        <div>停留时间: <span id="duration">0</span>秒</div>
+        <div>滚动深度: <span id="scroll">0</span>%</div>
+    </div>
+
+    <!-- 追踪脚本 -->
+    <script src="/static/js/tracker/fingerprint.js"></script>
+    <script src="/static/js/tracker/tracker.js"></script>
+
+    <!-- 调试信息更新（可选，按 Ctrl+D 显示） -->
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                const debugInfo = document.getElementById('debug-info');
+                debugInfo.classList.toggle('show');
+            }
+        });
+
+        // 定期更新调试信息
+        setInterval(() => {
+            if (window.AdAllianceTracker) {
+                const stats = window.AdAllianceTracker.getStats();
+                document.getElementById('track-status').textContent = '运行中';
+                document.getElementById('visit-id').textContent = stats.visitId || '-';
+                document.getElementById('duration').textContent = stats.duration;
+                document.getElementById('scroll').textContent = stats.scrollDepth;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
