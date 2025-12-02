@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - AdAlliance 管理后台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🎯 AdAlliance</h2>
+                <p>管理后台</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item active">📊 仪表盘</a>
+                <a href="/admin/logs.html" class="nav-item">📋 访问日志</a>
+                <a href="/public/index.html" class="nav-item">🧪 测试页面</a>
+                <a href="/docs" class="nav-item">📚 API 文档</a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <div class="top-bar">
+                <h1>📊 数据仪表盘</h1>
+                <div class="top-bar-actions">
+                    <select id="periodSelect" class="btn btn-secondary">
+                        <option value="7">最近 7 天</option>
+                        <option value="14">最近 14 天</option>
+                        <option value="30">最近 30 天</option>
+                    </select>
+                    <button onclick="loadDashboard()" class="btn btn-primary">🔄 刷新</button>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid" id="statsCards">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📈 访问趋势</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <!-- 设备分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💻 设备分布</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="deviceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 浏览器分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🌐 浏览器分布</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="browserChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/admin/api.js"></script>
+    <script>
+        let trendChart, deviceChart, browserChart;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+
+            // 监听周期选择变化
+            document.getElementById('periodSelect').addEventListener('change', loadDashboard);
+        });
+
+        // 加载仪表盘数据
+        async function loadDashboard() {
+            const days = parseInt(document.getElementById('periodSelect').value);
+
+            try {
+                // 加载统计摘要
+                await loadStats(days);
+
+                // 加载趋势图表
+                await loadTrendChart(days);
+
+                // 加载设备统计
+                await loadDeviceStats(days);
+            } catch (error) {
+                console.error('加载仪表盘失败:', error);
+                alert('加载数据失败，请稍后重试');
+            }
+        }
+
+        // 加载统计卡片
+        async function loadStats(days) {
+            const container = document.getElementById('statsCards');
+            Utils.showLoading(container);
+
+            try {
+                const response = await API.stats.getSummary(days);
+                const stats = response.data;
+
+                const todayChange = stats.yesterday_visits > 0
+                    ? ((stats.today_visits - stats.yesterday_visits) / stats.yesterday_visits * 100).toFixed(1)
+                    : 0;
+
+                container.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">总访问量</div>
+                            <div class="stat-card-icon">📊</div>
+                        </div>
+                        <div class="stat-card-value">${stats.total_visits.toLocaleString()}</div>
+                        <div class="stat-card-trend">全部数据</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">今日访问</div>
+                            <div class="stat-card-icon">🌞</div>
+                        </div>
+                        <div class="stat-card-value">${stats.today_visits.toLocaleString()}</div>
+                        <div class="stat-card-trend ${todayChange >= 0 ? 'trend-up' : 'trend-down'}">
+                            ${todayChange >= 0 ? '📈' : '📉'} ${Math.abs(todayChange)}% 对比昨日
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">平均评分</div>
+                            <div class="stat-card-icon">⭐</div>
+                        </div>
+                        <div class="stat-card-value">${stats.avg_authenticity_score}</div>
+                        <div class="stat-card-trend">真实性评分（0-100）</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-title">机器人比例</div>
+                            <div class="stat-card-icon">🤖</div>
+                        </div>
+                        <div class="stat-card-value">${stats.bot_rate}%</div>
+                        <div class="stat-card-trend">${stats.bot_visits} 个机器人访问</div>
+                    </div>
+                `;
+            } catch (error) {
+                Utils.showError(container, '加载统计数据失败');
+                throw error;
+            }
+        }
+
+        // 加载趋势图表
+        async function loadTrendChart(days) {
+            try {
+                const response = await API.stats.getTrend(days);
+                const data = response.data;
+
+                const labels = data.map(d => Format.date(d.date));
+                const visits = data.map(d => d.visits);
+                const scores = data.map(d => d.avg_score);
+
+                if (trendChart) {
+                    trendChart.destroy();
+                }
+
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '访问量',
+                                data: visits,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '平均评分',
+                                data: scores,
+                                borderColor: '#48bb78',
+                                backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '访问量'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '评分'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('加载趋势图表失败:', error);
+                throw error;
+            }
+        }
+
+        // 加载设备统计
+        async function loadDeviceStats(days) {
+            try {
+                const response = await API.stats.getDevices(days);
+                const stats = response.data;
+
+                // 设备分布饼图
+                if (deviceChart) {
+                    deviceChart.destroy();
+                }
+
+                const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+                deviceChart = new Chart(deviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: stats.devices.map(d => Format.deviceType(d.name)),
+                        datasets: [{
+                            data: stats.devices.map(d => d.count),
+                            backgroundColor: [
+                                '#667eea',
+                                '#48bb78',
+                                '#ed8936',
+                                '#f56565'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+
+                // 浏览器分布饼图
+                if (browserChart) {
+                    browserChart.destroy();
+                }
+
+                const browserCtx = document.getElementById('browserChart').getContext('2d');
+                browserChart = new Chart(browserCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: stats.browsers.map(d => d.name),
+                        datasets: [{
+                            data: stats.browsers.map(d => d.count),
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#48bb78', '#ed8936',
+                                '#f56565', '#9f7aea', '#38b2ac', '#ecc94b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('加载设备统计失败:', error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>

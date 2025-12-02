@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访问日志 - AdAlliance 管理后台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <!-- jQuery (DataTables dependency) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🎯 AdAlliance</h2>
+                <p>管理后台</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item">📊 仪表盘</a>
+                <a href="/admin/logs.html" class="nav-item active">📋 访问日志</a>
+                <a href="/public/index.html" class="nav-item">🧪 测试页面</a>
+                <a href="/docs" class="nav-item">📚 API 文档</a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <div class="top-bar">
+                <h1>📋 访问日志</h1>
+                <div class="top-bar-actions">
+                    <button onclick="loadVisits()" class="btn btn-primary">🔄 刷新</button>
+                    <button onclick="exportData()" class="btn btn-success">📥 导出CSV</button>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <label for="deviceFilter">设备类型</label>
+                    <select id="deviceFilter" onchange="applyFilter()">
+                        <option value="">全部</option>
+                        <option value="pc">💻 电脑</option>
+                        <option value="mobile">📱 手机</option>
+                        <option value="tablet">📱 平板</option>
+                        <option value="bot">🤖 机器人</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="scoreFilter">最低评分</label>
+                    <select id="scoreFilter" onchange="applyFilter()">
+                        <option value="">全部</option>
+                        <option value="80">80+ 优秀</option>
+                        <option value="60">60+ 良好</option>
+                        <option value="40">40+ 一般</option>
+                        <option value="0">0+ 全部</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="startDate">开始日期</label>
+                    <input type="date" id="startDate" onchange="applyFilter()">
+                </div>
+                <div class="filter-item">
+                    <label for="endDate">结束日期</label>
+                    <input type="date" id="endDate" onchange="applyFilter()">
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>访问记录列表</h3>
+                </div>
+                <div class="card-body">
+                    <div id="tableContainer">
+                        <table id="visitsTable" class="display" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>IP 地址</th>
+                                    <th>位置</th>
+                                    <th>设备</th>
+                                    <th>浏览器</th>
+                                    <th>停留</th>
+                                    <th>滚动</th>
+                                    <th>评分</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitsBody">
+                                <!-- 数据将通过 JavaScript 加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; padding:20px; overflow-y:auto;">
+        <div style="max-width:800px; margin:50px auto; background:white; border-radius:12px; padding:30px; position:relative;">
+            <button onclick="closeModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            <h2 style="margin-bottom:20px;">访问详情</h2>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/admin/api.js"></script>
+    <script>
+        let visitsData = [];
+        let dataTable;
+        let currentFilters = {};
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVisits();
+        });
+
+        // 加载访问记录
+        async function loadVisits() {
+            try {
+                const params = {
+                    page: 1,
+                    page_size: 1000, // 加载更多数据用于客户端筛选
+                    ...currentFilters
+                };
+
+                const response = await API.visits.getList(params);
+                visitsData = response.data;
+
+                initDataTable();
+            } catch (error) {
+                console.error('加载访问记录失败:', error);
+                alert('加载数据失败，请稍后重试');
+            }
+        }
+
+        // 初始化 DataTables
+        function initDataTable() {
+            if (dataTable) {
+                dataTable.destroy();
+            }
+
+            const tableData = visitsData.map(visit => [
+                Format.datetime(visit.timestamp),
+                visit.ip_address,
+                `${visit.ip_country || '-'} ${visit.ip_city || ''}`.trim(),
+                Format.deviceType(visit.device_type),
+                visit.browser || '-',
+                Format.duration(visit.stay_duration),
+                `${visit.scroll_depth}%`,
+                `<span style="color: ${getScoreColor(visit.authenticity_score)}">${Format.score(visit.authenticity_score)}</span>`,
+                `<button onclick="viewDetail('${visit.visit_id}')" class="btn btn-sm btn-primary">查看</button>
+                 <button onclick="deleteVisit('${visit.visit_id}')" class="btn btn-sm btn-danger">删除</button>`
+            ]);
+
+            dataTable = $('#visitsTable').DataTable({
+                data: tableData,
+                pageLength: 20,
+                order: [[0, 'desc']], // 按时间降序
+                language: {
+                    lengthMenu: '每页显示 _MENU_ 条',
+                    zeroRecords: '未找到匹配的记录',
+                    info: '显示第 _START_ 至 _END_ 条，共 _TOTAL_ 条',
+                    infoEmpty: '暂无数据',
+                    infoFiltered: '(从 _MAX_ 条记录中筛选)',
+                    search: '搜索:',
+                    paginate: {
+                        first: '首页',
+                        last: '末页',
+                        next: '下一页',
+                        previous: '上一页'
+                    }
+                }
+            });
+        }
+
+        // 应用筛选
+        function applyFilter() {
+            const deviceType = document.getElementById('deviceFilter').value;
+            const minScore = document.getElementById('scoreFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            currentFilters = {};
+            if (deviceType) currentFilters.device_type = deviceType;
+            if (minScore) currentFilters.min_score = minScore;
+            if (startDate) currentFilters.start_date = startDate;
+            if (endDate) currentFilters.end_date = endDate;
+
+            loadVisits();
+        }
+
+        // 查看详情
+        async function viewDetail(visitId) {
+            try {
+                const response = await API.visits.getDetail(visitId);
+                const visit = response.data;
+
+                const detailHTML = `
+                    <div style="display: grid; gap: 20px;">
+                        <div>
+                            <h3>基础信息</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>访问ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.visit_id}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>访问时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.datetime(visit.timestamp)}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>IP 地址:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_address}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>位置:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_country || '-'} ${visit.ip_city || ''}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>页面URL:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.page_url}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>来源:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.referrer || '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>设备信息</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>设备类型:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.deviceType(visit.device_type)}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>浏览器:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.browser || '-'} ${visit.browser_version || ''}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>操作系统:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.os || '-'} ${visit.os_version || ''}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>屏幕分辨率:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.screen_resolution || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>时区:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.timezone || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>语言:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.language || '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>浏览器指纹</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Canvas:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.canvas_fingerprint || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>WebGL:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.webgl_fingerprint || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>字体哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.fonts_hash || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>综合指纹:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.fingerprint_hash}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>行为数据</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>停留时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.duration(visit.stay_duration)}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>滚动深度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.scroll_depth}%</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>鼠标轨迹:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.mouse_movements ? '已记录' : '未记录'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>分析结果</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>真实性评分:</strong></td><td style="padding:8px; border-bottom:1px solid #eee; color:${getScoreColor(visit.authenticity_score)}"><strong>${Format.score(visit.authenticity_score)}</strong> ${Format.badge(visit.authenticity_score)}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>是否机器人:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.boolean(visit.is_bot)}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>是否代理:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.boolean(visit.is_proxy)}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('detailContent').innerHTML = detailHTML;
+                document.getElementById('detailModal').style.display = 'block';
+            } catch (error) {
+                console.error('加载详情失败:', error);
+                alert('加载详情失败');
+            }
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // 删除访问记录
+        async function deleteVisit(visitId) {
+            if (!confirm('确定要删除这条访问记录吗？')) return;
+
+            try {
+                await API.visits.delete(visitId);
+                alert('删除成功');
+                loadVisits();
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败');
+            }
+        }
+
+        // 导出数据
+        function exportData() {
+            const exportData = visitsData.map(v => ({
+                '时间': Format.datetime(v.timestamp),
+                'IP地址': v.ip_address,
+                '国家': v.ip_country || '',
+                '城市': v.ip_city || '',
+                '设备类型': v.device_type || '',
+                '浏览器': v.browser || '',
+                '操作系统': v.os || '',
+                '停留时间(秒)': v.stay_duration,
+                '滚动深度(%)': v.scroll_depth,
+                '真实性评分': v.authenticity_score,
+                '是否机器人': v.is_bot ? '是' : '否'
+            }));
+
+            Utils.exportToCSV(exportData, `访问日志_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        // 获取评分颜色
+        function getScoreColor(score) {
+            if (score >= 80) return '#48bb78';
+            if (score >= 60) return '#667eea';
+            if (score >= 40) return '#ed8936';
+            return '#f56565';
+        }
+    </script>
+</body>
+</html>
