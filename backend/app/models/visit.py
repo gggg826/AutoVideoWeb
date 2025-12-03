@@ -1,7 +1,7 @@
 """
 访问记录数据模型
 """
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, Text, Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -30,8 +30,8 @@ class Visit(Base):
 
     # IP 信息
     ip_address = Column(String(45), nullable=False, index=True, comment="IP 地址")
-    ip_country = Column(String(2), comment="国家代码")
-    ip_city = Column(String(100), comment="城市")
+    ip_country = Column(String(2), index=True, comment="国家代码")
+    ip_city = Column(String(100), index=True, comment="城市")
     is_proxy = Column(Boolean, default=False, comment="是否代理IP")
 
     # 请求信息
@@ -67,6 +67,21 @@ class Visit(Base):
 
     # 元数据
     raw_data = Column(Text, comment="原始数据备份（JSON）")
+
+    # 复合索引 - 优化常用查询
+    __table_args__ = (
+        # 用于按时间和设备类型筛选（admin visits list）
+        Index('idx_timestamp_device', timestamp, device_type),
+
+        # 用于按时间和评分筛选
+        Index('idx_timestamp_score', timestamp, authenticity_score),
+
+        # 用于地理位置统计
+        Index('idx_location', ip_country, ip_city),
+
+        # 用于机器人检测和时间筛选
+        Index('idx_timestamp_bot', timestamp, is_bot),
+    )
 
     def __repr__(self):
         return f"<Visit {self.visit_id} - {self.ip_address} - {self.device_type}>"

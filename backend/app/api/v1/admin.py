@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 import csv
 import json
 import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 
 router = APIRouter(
     prefix="/admin",
@@ -605,5 +607,131 @@ async def export_json(
         media_type="application/json",
         headers={
             "Content-Disposition": f"attachment; filename=visits_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        }
+    )
+
+
+@router.get("/export/excel", summary="导出 Excel")
+async def export_excel(
+    device_type: Optional[str] = Query(None, description="设备类型筛选"),
+    min_score: Optional[float] = Query(None, ge=0, le=100, description="最低评分"),
+    start_date: Optional[str] = Query(None, description="开始日期 YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="结束日期 YYYY-MM-DD"),
+    limit: int = Query(10000, ge=1, le=50000, description="最大导出数量"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    导出访问记录为 Excel 文件
+
+    支持与访问列表相同的筛选条件
+    """
+    # 构建查询条件（与 get_visits 相同）
+    conditions = []
+
+    if device_type:
+        conditions.append(Visit.device_type == device_type)
+
+    if min_score is not None:
+        conditions.append(Visit.authenticity_score >= min_score)
+
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            conditions.append(Visit.timestamp >= start_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的开始日期格式")
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)
+            conditions.append(Visit.timestamp < end_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的结束日期格式")
+
+    # 查询数据
+    stmt = select(Visit).order_by(desc(Visit.timestamp)).limit(limit)
+    if conditions:
+        stmt = stmt.where(and_(*conditions))
+
+    result = await db.execute(stmt)
+    visits = result.scalars().all()
+
+    # 创建 Excel 工作簿
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "访问记录"
+
+    # 设置表头样式
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    # 定义表头
+    headers = [
+        'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
+        '浏览器', '浏览器版本', '操作系统', 'OS版本',
+        '屏幕分辨率', '时区', '语言', '平台',
+        '停留时间(秒)', '滚动深度(%)', '鼠标移动',
+        '是否机器人', '是否代理', '真实性评分', '指纹哈希',
+        '页面URL', '来源'
+    ]
+
+    # 写入表头
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+
+    # 写入数据
+    for row_num, v in enumerate(visits, 2):
+        ws.cell(row=row_num, column=1, value=v.id)
+        ws.cell(row=row_num, column=2, value=v.timestamp.isoformat() if v.timestamp else '')
+        ws.cell(row=row_num, column=3, value=v.ip_address or '')
+        ws.cell(row=row_num, column=4, value=v.ip_country or '')
+        ws.cell(row=row_num, column=5, value=v.ip_city or '')
+        ws.cell(row=row_num, column=6, value=v.device_type or '')
+        ws.cell(row=row_num, column=7, value=v.browser or '')
+        ws.cell(row=row_num, column=8, value=v.browser_version or '')
+        ws.cell(row=row_num, column=9, value=v.os or '')
+        ws.cell(row=row_num, column=10, value=v.os_version or '')
+        ws.cell(row=row_num, column=11, value=v.screen_resolution or '')
+        ws.cell(row=row_num, column=12, value=v.timezone or '')
+        ws.cell(row=row_num, column=13, value=v.language or '')
+        ws.cell(row=row_num, column=14, value=v.platform or '')
+        ws.cell(row=row_num, column=15, value=v.stay_duration or 0)
+        ws.cell(row=row_num, column=16, value=v.scroll_depth or 0)
+        ws.cell(row=row_num, column=17, value=v.mouse_movements or 0)
+        ws.cell(row=row_num, column=18, value='是' if v.is_bot else '否')
+        ws.cell(row=row_num, column=19, value='是' if v.is_proxy else '否')
+        ws.cell(row=row_num, column=20, value=v.authenticity_score or 0)
+        ws.cell(row=row_num, column=21, value=v.fingerprint_hash or '')
+        ws.cell(row=row_num, column=22, value=v.page_url or '')
+        ws.cell(row=row_num, column=23, value=v.referrer or '')
+
+    # 自动调整列宽
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)  # 最大宽度50
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # 保存到字节流
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # 返回 Excel 文件
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename=visits_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         }
     )
