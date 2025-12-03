@@ -4,6 +4,35 @@
 
 const API_BASE = window.location.origin + '/api/v1';
 
+/**
+ * Get authorization headers
+ */
+function getAuthHeaders() {
+  const token = localStorage.getItem('admin_token');
+  if (!token) {
+    // Redirect to login if no token
+    window.location.href = '/admin/login.html';
+    throw new Error('No authentication token');
+  }
+
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
+ * Handle authentication errors
+ */
+function handleAuthError(response) {
+  if (response.status === 401 || response.status === 403) {
+    // Clear token and redirect to login
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_token_expires');
+    window.location.href = '/admin/login.html';
+  }
+}
+
 const API = {
   /**
    * 通用 GET 请求
@@ -16,7 +45,12 @@ const API = {
       }
     });
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: getAuthHeaders()
+    });
+
+    handleAuthError(response);
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -29,11 +63,11 @@ const API = {
   async post(endpoint, data) {
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
+
+    handleAuthError(response);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,8 +80,11 @@ const API = {
    */
   async delete(endpoint) {
     const response = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
+
+    handleAuthError(response);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

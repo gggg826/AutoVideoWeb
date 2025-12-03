@@ -8,10 +8,15 @@ from sqlalchemy import select, func, and_, desc
 from app.core.database import get_db
 from app.models.visit import Visit
 from app.schemas.visit import VisitDetail
+from app.api.v1.auth import get_current_admin
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    dependencies=[Depends(get_current_admin)]
+)
 
 
 @router.get("/visits", summary="获取访问列表")

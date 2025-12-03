@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 from app.config import settings
-from app.api.v1 import tracker, admin
+from app.api.v1 import tracker, admin, auth
 
 # 创建 FastAPI 应用实例
 app = FastAPI(
@@ -29,6 +29,7 @@ app.add_middleware(
 # 注册 API 路由
 app.include_router(tracker.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 # 静态文件服务
 frontend_dir = Path(__file__).parent.parent.parent / "frontend"
