@@ -255,19 +255,17 @@ async def get_stats_trend(
     """
     获取访问趋势数据（按天统计）
     """
-    from sqlalchemy import func, cast, Date
-
     period_start = datetime.now() - timedelta(days=days)
 
-    # 按天统计访问量
+    # 按天统计访问量（SQLite 兼容）
     stmt = select(
-        cast(Visit.timestamp, Date).label('date'),
+        func.date(Visit.timestamp).label('date'),
         func.count(Visit.id).label('visits'),
         func.avg(Visit.authenticity_score).label('avg_score')
     ).where(
         Visit.timestamp >= period_start
     ).group_by(
-        cast(Visit.timestamp, Date)
+        func.date(Visit.timestamp)
     ).order_by('date')
 
     result = await db.execute(stmt)
@@ -277,7 +275,7 @@ async def get_stats_trend(
         "success": True,
         "data": [
             {
-                "date": row[0].isoformat() if row[0] else None,
+                "date": str(row[0]) if row[0] else None,
                 "visits": row[1],
                 "avg_score": round(row[2], 2) if row[2] else 0
             }
