@@ -34,6 +34,7 @@
             <div class="top-bar">
                 <h1>📋 访问日志</h1>
                 <div class="top-bar-actions">
+                    <button onclick="clearAllVisits()" class="btn btn-danger">🗑️ 清空</button>
                     <button onclick="loadVisits()" class="btn btn-primary">🔄 刷新</button>
                     <button onclick="exportExcel()" class="btn btn-warning">📊 导出Excel</button>
                     <button onclick="exportCSV()" class="btn btn-success">📥 导出CSV</button>
@@ -440,6 +441,47 @@
             } catch (error) {
                 console.error('导出 Excel 失败:', error);
                 alert('导出失败，请稍后重试');
+            }
+        }
+
+        // 清空所有访问记录
+        async function clearAllVisits() {
+            // 二次确认
+            if (!confirm('⚠️ 警告：此操作将清空所有访问记录，且不可恢复！\n\n确定要继续吗？')) {
+                return;
+            }
+
+            // 三次确认
+            if (!confirm('请再次确认：真的要清空所有数据吗？')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('admin_token');
+                if (!token) {
+                    window.location.href = '/admin/login.html';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/admin/visits/clear-all`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('清空失败');
+                }
+
+                const data = await response.json();
+                alert(`✅ 成功清空 ${data.deleted_count} 条访问记录`);
+
+                // 刷新页面
+                loadVisits();
+            } catch (error) {
+                console.error('清空失败:', error);
+                alert('清空失败，请稍后重试');
             }
         }
 

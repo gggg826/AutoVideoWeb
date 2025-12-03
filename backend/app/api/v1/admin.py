@@ -401,6 +401,34 @@ async def get_location_stats(
     }
 
 
+@router.post("/visits/clear-all", summary="清空所有访问记录")
+async def clear_all_visits(db: AsyncSession = Depends(get_db)):
+    """
+    清空所有访问记录
+
+    警告：此操作不可逆！
+    """
+    try:
+        # 获取删除前的记录数
+        count_stmt = select(func.count(Visit.id))
+        result = await db.execute(count_stmt)
+        total_count = result.scalar()
+
+        # 删除所有记录
+        delete_stmt = Visit.__table__.delete()
+        await db.execute(delete_stmt)
+        await db.commit()
+
+        return {
+            "success": True,
+            "message": f"已清空所有访问记录",
+            "deleted_count": total_count
+        }
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"清空失败: {str(e)}")
+
+
 @router.delete("/visits/{visit_id}", summary="删除访问记录")
 async def delete_visit(
     visit_id: str,
