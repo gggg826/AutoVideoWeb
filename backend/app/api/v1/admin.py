@@ -401,7 +401,7 @@ async def get_location_stats(
     }
 
 
-@router.post("/visits/clear-all", summary="清空所有访问记录")
+@router.post("/clear-visits", summary="清空所有访问记录")
 async def clear_all_visits(db: AsyncSession = Depends(get_db)):
     """
     清空所有访问记录
