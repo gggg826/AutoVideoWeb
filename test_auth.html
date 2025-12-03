@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <div id="status"></div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api/v1';
+        const statusDiv = document.getElementById('status');
+
+        async function testAuth() {
+            try {
+                // 1. Test Login
+                statusDiv.innerHTML += '<p>1. Testing login...</p>';
+                const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'Admin@123' })
+                });
+                const loginData = await loginResponse.json();
+
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+
+                const token = loginData.access_token;
+                statusDiv.innerHTML += `<p style="color:green">✓ Login successful! Token: ${token.substring(0, 20)}...</p>`;
+
+                // 2. Test Admin API with token
+                statusDiv.innerHTML += '<p>2. Testing admin API with token...</p>';
+                const apiResponse = await fetch(`${API_BASE}/admin/stats/summary?days=7`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error(`API request failed with status ${apiResponse.status}`);
+                }
+
+                const apiData = await apiResponse.json();
+                statusDiv.innerHTML += `<p style="color:green">✓ Admin API works! Data: ${JSON.stringify(apiData).substring(0, 100)}...</p>`;
+
+                // 3. Store token and test redirect
+                statusDiv.innerHTML += '<p>3. Storing token to localStorage...</p>';
+                localStorage.setItem('admin_token', token);
+                statusDiv.innerHTML += '<p style="color:green">✓ Token stored!</p>';
+
+                statusDiv.innerHTML += '<p>4. Now you can visit <a href="/admin/index.html">Admin Dashboard</a></p>';
+                statusDiv.innerHTML += '<p style="color:blue; font-weight:bold">✓ ALL TESTS PASSED!</p>';
+
+            } catch (error) {
+                statusDiv.innerHTML += `<p style="color:red">✗ Error: ${error.message}</p>`;
+            }
+        }
+
+        testAuth();
+    </script>
+</body>
+</html>
