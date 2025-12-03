@@ -1,45 +1,45 @@
 """
-数据库初始化脚本
-创建所有数据库表
+Database initialization script
+Creates all database tables
 """
 import asyncio
 import sys
 from pathlib import Path
 
-# 添加项目根目录到 Python 路径
+# Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.database import engine, Base
-from app.models.visit import Visit  # 导入所有模型
+from app.models.visit import Visit  # Import all models
 
 
 async def init_database():
-    """初始化数据库"""
-    print("🔧 开始初始化数据库...")
+    """Initialize database"""
+    print("[INFO] Initializing database...")
 
     async with engine.begin() as conn:
-        # 创建所有表
+        # Create all tables
         await conn.run_sync(Base.metadata.create_all)
 
-    print("✅ 数据库初始化完成！")
-    print(f"📊 创建的表: {', '.join(Base.metadata.tables.keys())}")
+    print("[OK] Database initialized successfully!")
+    print(f"[INFO] Created tables: {', '.join(Base.metadata.tables.keys())}")
 
 
 async def drop_database():
-    """删除所有表（谨慎使用）"""
-    print("⚠️  警告：即将删除所有数据库表！")
-    confirm = input("确认删除？(yes/no): ")
+    """Drop all tables (use with caution)"""
+    print("[WARNING] About to drop all database tables!")
+    confirm = input("Confirm deletion? (yes/no): ")
 
     if confirm.lower() == "yes":
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
-        print("✅ 所有表已删除")
+        print("[OK] All tables dropped")
     else:
-        print("❌ 操作已取消")
+        print("[CANCELLED] Operation cancelled")
 
 
 if __name__ == "__main__":
-    # 检查命令行参数
+    # Check command line arguments
     if len(sys.argv) > 1 and sys.argv[1] == "drop":
         asyncio.run(drop_database())
     else:

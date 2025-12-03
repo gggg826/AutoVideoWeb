@@ -1,12 +1,12 @@
 """
-应用启动脚本
-运行 FastAPI 应用服务器
+Application startup script
+Runs the FastAPI application server
 """
 import uvicorn
 import sys
 from pathlib import Path
 
-# 添加项目根目录到 Python 路径
+# Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
 from backend.app.config import settings
@@ -14,17 +14,18 @@ from backend.app.config import settings
 
 if __name__ == "__main__":
     print("="  * 60)
-    print(f"🚀 启动 {settings.APP_NAME}")
-    print(f"📦 版本: {settings.APP_VERSION}")
-    print(f"🌍 环境: {settings.ENVIRONMENT}")
-    print(f"🔧 调试模式: {settings.DEBUG}")
-    print(f"📍 地址: http://{settings.HOST}:{settings.PORT}")
+    print(f"Starting {settings.APP_NAME}")
+    print(f"Version: {settings.APP_VERSION}")
+    print(f"Environment: {settings.ENVIRONMENT}")
+    print(f"Debug Mode: {settings.DEBUG}")
+    print(f"Address: http://{settings.HOST}:{settings.PORT}")
     print("=" * 60)
     print()
-    print("📚 API 文档: http://localhost:8000/docs")
-    print("🧪 测试页面: http://localhost:8000/public/index.html")
+    print("API Docs:   http://localhost:8000/docs")
+    print("Test Page:  http://localhost:8000/public/index.html")
+    print("Admin:      http://localhost:8000/admin/index.html")
     print()
-    print("按 Ctrl+C 停止服务器")
+    print("Press Ctrl+C to stop the server")
     print("=" * 60)
     print()
 

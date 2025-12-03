@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     # 缓存配置
     CACHE_TTL: int = 300
+    MAX_EXPORT_ROWS: int = 10000
 
     # 日志配置
     LOG_LEVEL: str = "INFO"
