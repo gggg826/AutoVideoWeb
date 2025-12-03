@@ -51,14 +51,17 @@ python -c "import fastapi" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Installing dependencies...
     pip install -r backend\requirements.txt
+
+    :: Verify installation by trying to import again
+    python -c "import fastapi" >nul 2>&1
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to install dependencies
         pause
         exit /b 1
     )
-    echo [OK] Dependencies installed
+    echo [OK] Dependencies installed successfully
 ) else (
-    echo [OK] Dependencies installed
+    echo [OK] Dependencies already installed
 )
 echo.
 

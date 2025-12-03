@@ -10,7 +10,7 @@ aiosqlite==0.19.0
 # Data validation
 pydantic==2.5.3
 pydantic-settings==2.1.0
-email-validator==2.1.0
+email-validator==2.1.1
 
 # User-Agent parsing
 user-agents==2.2.0
