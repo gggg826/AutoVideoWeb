@@ -6,7 +6,7 @@
 
 ```bash
 # 1. 下载部署脚本
-wget https://raw.githubusercontent.com/gggg826/AutoVideoWeb/master/deploy.sh
+wget https://raw.githubusercontent.com/gggg826/AutoVideoWeb/master/Deploy/Linux/deploy.sh
 
 # 2. 赋予执行权限
 chmod +x deploy.sh
