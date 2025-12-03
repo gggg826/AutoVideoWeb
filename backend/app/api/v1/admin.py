@@ -17,7 +17,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 @router.get("/visits", summary="获取访问列表")
 async def get_visits(
     page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    page_size: int = Query(20, ge=1, le=10000, description="每页��量"),
     device_type: Optional[str] = Query(None, description="设备类型筛选"),
     min_score: Optional[float] = Query(None, ge=0, le=100, description="最低评分"),
     start_date: Optional[str] = Query(None, description="开始日期 YYYY-MM-DD"),
