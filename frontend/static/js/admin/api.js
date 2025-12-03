@@ -104,6 +104,10 @@ const API = {
 
     async getDevices(days = 7) {
       return await API.get('/admin/stats/devices', { days });
+    },
+
+    async getLocations(days = 7) {
+      return await API.get('/admin/stats/locations', { days });
     }
   },
 

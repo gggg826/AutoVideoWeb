@@ -7,6 +7,7 @@ from app.models.visit import Visit
 from app.schemas.visit import VisitCreate, BehaviorUpdate
 from app.utils.hash import generate_fingerprint_hash, calculate_fingerprint_quality
 from app.utils.ua import parse_user_agent
+from app.utils.geolocation import get_ip_geolocation
 from typing import Optional, List
 import uuid
 import json
@@ -30,6 +31,9 @@ async def create_visit(
     """
     # 解析 User-Agent
     ua_info = parse_user_agent(visit_data.user_agent)
+
+    # 获取 IP 地理位置
+    geo_data = await get_ip_geolocation(ip_address)
 
     # 生成指纹哈希
     fingerprint_hash = generate_fingerprint_hash(
@@ -58,6 +62,9 @@ async def create_visit(
     visit = Visit(
         visit_id=str(uuid.uuid4()),
         ip_address=ip_address,
+        # IP 地理位置信息
+        ip_country=geo_data.get('country_code') if geo_data else None,
+        ip_city=geo_data.get('city') if geo_data else None,
         user_agent=visit_data.user_agent,
         referrer=visit_data.referrer,
         page_url=visit_data.page_url,

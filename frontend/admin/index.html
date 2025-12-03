@@ -83,6 +83,18 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 地理位置分布 -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3>🌍 访问地理位置分布</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -98,7 +110,7 @@
             }
         })();
 
-        let trendChart, deviceChart, browserChart;
+        let trendChart, deviceChart, browserChart, locationChart;
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -121,6 +133,9 @@
 
                 // 加载设备统计
                 await loadDeviceStats(days);
+
+                // 加载地理位置统计
+                await loadLocationChart(days);
             } catch (error) {
                 console.error('加载仪表盘失败:', error);
                 alert('加载数据失败，请稍后重试');
@@ -336,6 +351,73 @@
                 });
             } catch (error) {
                 console.error('加载设备统计失败:', error);
+                throw error;
+            }
+        }
+
+        // 加载地理位置统计
+        async function loadLocationChart(days) {
+            try {
+                const response = await API.stats.getLocations(days);
+                const stats = response.data;
+
+                // 地理位置条形图
+                if (locationChart) {
+                    locationChart.destroy();
+                }
+
+                const locationCtx = document.getElementById('locationChart').getContext('2d');
+                locationChart = new Chart(locationCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: stats.countries.map(d => d.code),
+                        datasets: [{
+                            label: '访问量',
+                            data: stats.countries.map(d => d.count),
+                            backgroundColor: '#667eea',
+                            borderColor: '#667eea',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const countryCode = context.label;
+                                        const cities = stats.cities
+                                            .filter(c => c.country === countryCode)
+                                            .map(c => `${c.city}: ${c.count}`)
+                                            .slice(0, 5);
+                                        return cities.length > 0 ? cities : '';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '访问量'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '国家/地区'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('加载地理位置统计失败:', error);
                 throw error;
             }
         }

@@ -35,7 +35,8 @@
                 <h1>📋 访问日志</h1>
                 <div class="top-bar-actions">
                     <button onclick="loadVisits()" class="btn btn-primary">🔄 刷新</button>
-                    <button onclick="exportData()" class="btn btn-success">📥 导出CSV</button>
+                    <button onclick="exportCSV()" class="btn btn-success">📥 导出CSV</button>
+                    <button onclick="exportJSON()" class="btn btn-info">📥 导出JSON</button>
                 </div>
             </div>
 
@@ -313,6 +314,90 @@
             }));
 
             Utils.exportToCSV(exportData, `访问日志_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        // 导出 CSV
+        async function exportCSV() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                if (!token) {
+                    window.location.href = '/admin/login.html';
+                    return;
+                }
+
+                // 构建查询参数（使用当前筛选条件）
+                const params = new URLSearchParams();
+                Object.keys(currentFilters).forEach(key => {
+                    if (currentFilters[key]) {
+                        params.append(key, currentFilters[key]);
+                    }
+                });
+
+                // 下载文件
+                const url = `${API_BASE}/admin/export/csv?${params.toString()}`;
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('导出失败');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `visits_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('导出 CSV 失败:', error);
+                alert('导出失败，请稍后重试');
+            }
+        }
+
+        // 导出 JSON
+        async function exportJSON() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                if (!token) {
+                    window.location.href = '/admin/login.html';
+                    return;
+                }
+
+                // 构建查询参数（使用当前筛选条件）
+                const params = new URLSearchParams();
+                Object.keys(currentFilters).forEach(key => {
+                    if (currentFilters[key]) {
+                        params.append(key, currentFilters[key]);
+                    }
+                });
+
+                // 下载文件
+                const url = `${API_BASE}/admin/export/json?${params.toString()}`;
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('导出失败');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `visits_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('导出 JSON 失败:', error);
+                alert('导出失败，请稍后重试');
+            }
         }
 
         // 获取评分颜色

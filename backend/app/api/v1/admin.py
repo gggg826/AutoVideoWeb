@@ -3,6 +3,7 @@
 提供访问数据查询、统计分析等功能
 """
 from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, desc
 from app.core.database import get_db
@@ -11,6 +12,9 @@ from app.schemas.visit import VisitDetail
 from app.api.v1.auth import get_current_admin
 from typing import List, Optional
 from datetime import datetime, timedelta
+import csv
+import json
+import io
 
 router = APIRouter(
     prefix="/admin",
@@ -347,6 +351,54 @@ async def get_device_stats(
     }
 
 
+@router.get("/stats/locations", summary="获取地理位置统计")
+async def get_location_stats(
+    days: int = Query(7, ge=1, le=90, description="统计天数"),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取国家和城市访问统计"""
+    period_start = datetime.now() - timedelta(days=days)
+
+    # 国家统计
+    country_stmt = select(
+        Visit.ip_country,
+        func.count(Visit.id).label('count')
+    ).where(
+        and_(
+            Visit.timestamp >= period_start,
+            Visit.ip_country != None
+        )
+    ).group_by(Visit.ip_country).order_by(desc('count')).limit(15)
+    country_result = await db.execute(country_stmt)
+
+    # 城市统计（前15个）
+    city_stmt = select(
+        Visit.ip_country,
+        Visit.ip_city,
+        func.count(Visit.id).label('count')
+    ).where(
+        and_(
+            Visit.timestamp >= period_start,
+            Visit.ip_city != None
+        )
+    ).group_by(Visit.ip_country, Visit.ip_city).order_by(desc('count')).limit(15)
+    city_result = await db.execute(city_stmt)
+
+    return {
+        "success": True,
+        "data": {
+            "countries": [
+                {"code": row[0], "count": row[1]}
+                for row in country_result
+            ],
+            "cities": [
+                {"country": row[0], "city": row[1], "count": row[2]}
+                for row in city_result
+            ]
+        }
+    }
+
+
 @router.delete("/visits/{visit_id}", summary="删除访问记录")
 async def delete_visit(
     visit_id: str,
@@ -367,3 +419,191 @@ async def delete_visit(
         "success": True,
         "message": "访问记录已删除"
     }
+
+
+@router.get("/export/csv", summary="导出 CSV")
+async def export_csv(
+    device_type: Optional[str] = Query(None, description="设备类型筛选"),
+    min_score: Optional[float] = Query(None, ge=0, le=100, description="最低评分"),
+    start_date: Optional[str] = Query(None, description="开始日期 YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="结束日期 YYYY-MM-DD"),
+    limit: int = Query(10000, ge=1, le=50000, description="最大导出数量"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    导出访问记录为 CSV 文件
+
+    支持与访问列表相同的筛选条件
+    """
+    # 构建查询条件（与 get_visits 相同）
+    conditions = []
+
+    if device_type:
+        conditions.append(Visit.device_type == device_type)
+
+    if min_score is not None:
+        conditions.append(Visit.authenticity_score >= min_score)
+
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            conditions.append(Visit.timestamp >= start_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的开始日期格式")
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)
+            conditions.append(Visit.timestamp < end_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的结束日期格式")
+
+    # 查询数据
+    stmt = select(Visit).order_by(desc(Visit.timestamp)).limit(limit)
+    if conditions:
+        stmt = stmt.where(and_(*conditions))
+
+    result = await db.execute(stmt)
+    visits = result.scalars().all()
+
+    # 创建 CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # 写入表头
+    writer.writerow([
+        'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
+        '浏览器', '浏览器版本', '操作系统', 'OS版本',
+        '屏幕分辨率', '时区', '语言', '平台',
+        '停留时间(秒)', '滚动深度(%)', '鼠标移动',
+        '是否机器人', '是否代理', '真实性评分', '指纹哈希',
+        '页面URL', '来源'
+    ])
+
+    # 写入数据
+    for v in visits:
+        writer.writerow([
+            v.id,
+            v.timestamp.isoformat() if v.timestamp else '',
+            v.ip_address or '',
+            v.ip_country or '',
+            v.ip_city or '',
+            v.device_type or '',
+            v.browser or '',
+            v.browser_version or '',
+            v.os or '',
+            v.os_version or '',
+            v.screen_resolution or '',
+            v.timezone or '',
+            v.language or '',
+            v.platform or '',
+            v.stay_duration or 0,
+            v.scroll_depth or 0,
+            v.mouse_movements or 0,
+            '是' if v.is_bot else '否',
+            '是' if v.is_proxy else '否',
+            v.authenticity_score or 0,
+            v.fingerprint_hash or '',
+            v.page_url or '',
+            v.referrer or ''
+        ])
+
+    # 返回 CSV 文件
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=visits_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        }
+    )
+
+
+@router.get("/export/json", summary="导出 JSON")
+async def export_json(
+    device_type: Optional[str] = Query(None, description="设备类型筛选"),
+    min_score: Optional[float] = Query(None, ge=0, le=100, description="最低评分"),
+    start_date: Optional[str] = Query(None, description="开始日期 YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="结束日期 YYYY-MM-DD"),
+    limit: int = Query(10000, ge=1, le=50000, description="最大导出数量"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    导出访问记录为 JSON 文件
+
+    支持与访问列表相同的筛选条件
+    """
+    # 构建查询条件（与 get_visits 相同）
+    conditions = []
+
+    if device_type:
+        conditions.append(Visit.device_type == device_type)
+
+    if min_score is not None:
+        conditions.append(Visit.authenticity_score >= min_score)
+
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            conditions.append(Visit.timestamp >= start_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的开始日期格式")
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)
+            conditions.append(Visit.timestamp < end_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="无效的结束日期格式")
+
+    # 查询数据
+    stmt = select(Visit).order_by(desc(Visit.timestamp)).limit(limit)
+    if conditions:
+        stmt = stmt.where(and_(*conditions))
+
+    result = await db.execute(stmt)
+    visits = result.scalars().all()
+
+    # 构建 JSON 数据
+    data = []
+    for v in visits:
+        data.append({
+            'id': v.id,
+            'visit_id': v.visit_id,
+            'timestamp': v.timestamp.isoformat() if v.timestamp else None,
+            'ip_address': v.ip_address,
+            'ip_country': v.ip_country,
+            'ip_city': v.ip_city,
+            'device_type': v.device_type,
+            'browser': v.browser,
+            'browser_version': v.browser_version,
+            'os': v.os,
+            'os_version': v.os_version,
+            'screen_resolution': v.screen_resolution,
+            'timezone': v.timezone,
+            'language': v.language,
+            'platform': v.platform,
+            'canvas_fingerprint': v.canvas_fingerprint,
+            'webgl_fingerprint': v.webgl_fingerprint,
+            'fonts_hash': v.fonts_hash,
+            'stay_duration': v.stay_duration,
+            'scroll_depth': v.scroll_depth,
+            'mouse_movements': v.mouse_movements,
+            'is_bot': v.is_bot,
+            'is_proxy': v.is_proxy,
+            'authenticity_score': v.authenticity_score,
+            'fingerprint_hash': v.fingerprint_hash,
+            'page_url': v.page_url,
+            'referrer': v.referrer,
+            'user_agent': v.user_agent
+        })
+
+    # 返回 JSON 文件
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    return StreamingResponse(
+        iter([json_str]),
+        media_type="application/json",
+        headers={
+            "Content-Disposition": f"attachment; filename=visits_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        }
+    )
