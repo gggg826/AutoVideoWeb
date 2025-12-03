@@ -114,6 +114,15 @@
     <!-- JavaScript -->
     <script src="/static/js/admin/api.js"></script>
     <script>
+        // Check authentication before page loads
+        (function() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin/login.html';
+                throw new Error('No token');
+            }
+        })();
+
         let visitsData = [];
         let dataTable;
         let currentFilters = {};
