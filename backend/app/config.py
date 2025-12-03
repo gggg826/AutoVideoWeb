@@ -21,12 +21,12 @@ class Settings(BaseSettings):
     WORKERS: int = 1
 
     # 数据库配置
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/tracker.db"
 
     # 安全配置
-    SECRET_KEY: str
-    ADMIN_USERNAME: str
-    ADMIN_PASSWORD: str
+    SECRET_KEY: str = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "Admin@123"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 
     # CORS 配置
