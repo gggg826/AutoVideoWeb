@@ -71,14 +71,14 @@
                     </div>
                 </div>
 
-                <!-- 浏览器分布 -->
+                <!-- 来源渠道分布 -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>🌐 浏览器分布</h3>
+                        <h3>🔗 来源渠道分布</h3>
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
-                            <canvas id="browserChart"></canvas>
+                            <canvas id="referrerChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -110,7 +110,7 @@
             }
         })();
 
-        let trendChart, deviceChart, browserChart, locationChart;
+        let trendChart, deviceChart, referrerChart, locationChart;
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -133,6 +133,9 @@
 
                 // 加载设备统计
                 await loadDeviceStats(days);
+
+                // 加载来源渠道统计
+                await loadReferrerChart(days);
 
                 // 加载地理位置统计
                 await loadLocationChart(days);
@@ -320,22 +323,34 @@
                         }
                     }
                 });
+            } catch (error) {
+                console.error('加载设备统计失败:', error);
+                throw error;
+            }
+        }
 
-                // 浏览器分布饼图
-                if (browserChart) {
-                    browserChart.destroy();
+        // 加载来源渠道统计
+        async function loadReferrerChart(days) {
+            try {
+                const response = await API.stats.getReferrers(days);
+                const stats = response.data;
+
+                // 来源渠道饼图
+                if (referrerChart) {
+                    referrerChart.destroy();
                 }
 
-                const browserCtx = document.getElementById('browserChart').getContext('2d');
-                browserChart = new Chart(browserCtx, {
+                const referrerCtx = document.getElementById('referrerChart').getContext('2d');
+                referrerChart = new Chart(referrerCtx, {
                     type: 'pie',
                     data: {
-                        labels: stats.browsers.map(d => d.name),
+                        labels: stats.referrers.map(d => d.name),
                         datasets: [{
-                            data: stats.browsers.map(d => d.count),
+                            data: stats.referrers.map(d => d.count),
                             backgroundColor: [
                                 '#667eea', '#764ba2', '#48bb78', '#ed8936',
-                                '#f56565', '#9f7aea', '#38b2ac', '#ecc94b'
+                                '#f56565', '#9f7aea', '#38b2ac', '#ecc94b',
+                                '#fc8181', '#63b3ed', '#f6ad55', '#68d391'
                             ]
                         }]
                     },
@@ -345,12 +360,27 @@
                         plugins: {
                             legend: {
                                 position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
                             }
                         }
                     }
                 });
             } catch (error) {
-                console.error('加载设备统计失败:', error);
+                console.error('加载来源渠道统计失败:', error);
                 throw error;
             }
         }

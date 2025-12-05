@@ -401,6 +401,101 @@ async def get_location_stats(
     }
 
 
+@router.get("/stats/referrers", summary="获取来源渠道统计")
+async def get_referrer_stats(
+    days: int = Query(7, ge=1, le=90, description="统计天数"),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取来源渠道/平台统计"""
+    period_start = datetime.now() - timedelta(days=days)
+
+    # 来源统计 - 对referrer进行分类处理
+    referrer_stmt = select(
+        Visit.referrer,
+        func.count(Visit.id).label('count')
+    ).where(
+        Visit.timestamp >= period_start
+    ).group_by(Visit.referrer).order_by(desc('count')).limit(20)
+
+    referrer_result = await db.execute(referrer_stmt)
+    referrers_raw = [(row[0], row[1]) for row in referrer_result]
+
+    # 分类处理来源
+    categorized = {}
+    direct_count = 0
+
+    for referrer, count in referrers_raw:
+        if not referrer or referrer == "" or referrer == "null":
+            direct_count += count
+        else:
+            # 简单的域名提取和分类
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(referrer)
+                domain = parsed.netloc.lower()
+
+                # 去除www前缀
+                if domain.startswith('www.'):
+                    domain = domain[4:]
+
+                # 分类主要平台
+                if 'google' in domain:
+                    category = 'Google'
+                elif 'bing' in domain or 'microsoft' in domain:
+                    category = 'Bing'
+                elif 'baidu' in domain:
+                    category = '百度'
+                elif 'tiktok' in domain or 'douyin' in domain:
+                    category = 'TikTok/抖音'
+                elif 'facebook' in domain or 'fb.com' in domain:
+                    category = 'Facebook'
+                elif 'twitter' in domain or 'x.com' in domain:
+                    category = 'Twitter/X'
+                elif 'youtube' in domain:
+                    category = 'YouTube'
+                elif 'instagram' in domain:
+                    category = 'Instagram'
+                elif 'weibo' in domain:
+                    category = '微博'
+                elif 'wechat' in domain or 'weixin' in domain:
+                    category = '微信'
+                elif 'linkedin' in domain:
+                    category = 'LinkedIn'
+                elif 'reddit' in domain:
+                    category = 'Reddit'
+                else:
+                    # 其他来源使用域名
+                    category = domain if len(domain) < 30 else domain[:27] + '...'
+
+                if category in categorized:
+                    categorized[category] += count
+                else:
+                    categorized[category] = count
+            except:
+                # 解析失败的归入其他
+                if '其他' in categorized:
+                    categorized['其他'] += count
+                else:
+                    categorized['其他'] = count
+
+    # 添加直接访问
+    if direct_count > 0:
+        categorized['直接访问'] = direct_count
+
+    # 转换为列表并排序
+    referrers_list = [
+        {"name": name, "count": count}
+        for name, count in sorted(categorized.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    return {
+        "success": True,
+        "data": {
+            "referrers": referrers_list
+        }
+    }
+
+
 @router.post("/clear-visits", summary="清空所有访问记录")
 async def clear_all_visits(db: AsyncSession = Depends(get_db)):
     """

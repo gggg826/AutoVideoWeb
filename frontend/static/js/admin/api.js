@@ -108,6 +108,10 @@ const API = {
 
     async getLocations(days = 7) {
       return await API.get('/admin/stats/locations', { days });
+    },
+
+    async getReferrers(days = 7) {
+      return await API.get('/admin/stats/referrers', { days });
     }
   },
 
