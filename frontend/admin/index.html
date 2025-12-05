@@ -340,6 +340,31 @@
                     referrerChart.destroy();
                 }
 
+                // 如果没有数据，显示占位信息
+                if (!stats.referrers || stats.referrers.length === 0) {
+                    const referrerCtx = document.getElementById('referrerChart').getContext('2d');
+                    referrerChart = new Chart(referrerCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['暂无数据'],
+                            datasets: [{
+                                data: [1],
+                                backgroundColor: ['#e2e8f0']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+
                 const referrerCtx = document.getElementById('referrerChart').getContext('2d');
                 referrerChart = new Chart(referrerCtx, {
                     type: 'pie',

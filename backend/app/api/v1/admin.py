@@ -407,6 +407,8 @@ async def get_referrer_stats(
     db: AsyncSession = Depends(get_db)
 ):
     """获取来源渠道/平台统计"""
+    from urllib.parse import urlparse
+
     period_start = datetime.now() - timedelta(days=days)
 
     # 来源统计 - 对referrer进行分类处理
@@ -425,14 +427,18 @@ async def get_referrer_stats(
     direct_count = 0
 
     for referrer, count in referrers_raw:
-        if not referrer or referrer == "" or referrer == "null":
+        if not referrer or referrer == "" or referrer == "null" or referrer == "None":
             direct_count += count
         else:
             # 简单的域名提取和分类
             try:
-                from urllib.parse import urlparse
                 parsed = urlparse(referrer)
-                domain = parsed.netloc.lower()
+                domain = parsed.netloc.lower() if parsed.netloc else ""
+
+                # 如果没有域名，归入直接访问
+                if not domain:
+                    direct_count += count
+                    continue
 
                 # 去除www前缀
                 if domain.startswith('www.'):
@@ -471,7 +477,7 @@ async def get_referrer_stats(
                     categorized[category] += count
                 else:
                     categorized[category] = count
-            except:
+            except Exception as e:
                 # 解析失败的归入其他
                 if '其他' in categorized:
                     categorized['其他'] += count
@@ -481,6 +487,15 @@ async def get_referrer_stats(
     # 添加直接访问
     if direct_count > 0:
         categorized['直接访问'] = direct_count
+
+    # 如果没有任何数据，返回空列表
+    if not categorized:
+        return {
+            "success": True,
+            "data": {
+                "referrers": []
+            }
+        }
 
     # 转换为列表并排序
     referrers_list = [
