@@ -528,22 +528,28 @@
             }
         }
 
-        // 辅助函数：按半小时分组时间戳
-        function groupByHalfHour(timestamps) {
-            // 生成48个半小时时间段的标签（从当前时间向前推24小时）
+        // 辅助函数：按5分钟分组时间戳
+        function groupByFiveMinutes(timestamps) {
+            // 生成288个5分钟时间段（24小时 * 12个5分钟区间）
             const now = new Date();
             const labels = [];
-            const counts = Array(48).fill(0);
+            const counts = Array(288).fill(0);
 
-            // 生成时间标签（倒序，从24小时前到现在）
-            for (let i = 47; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 30 * 60 * 1000);
+            // 生成时间标签（每5分钟一个，但只在半小时刻度显示标签）
+            for (let i = 287; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 5 * 60 * 1000);
                 const hours = String(time.getHours()).padStart(2, '0');
-                const minutes = time.getMinutes() === 0 ? '00' : '30';
-                labels.push(`${hours}:${minutes}`);
+                const minutes = String(time.getMinutes()).padStart(2, '0');
+
+                // 只在半小时刻度显示标签，其他为空字符串
+                if (time.getMinutes() % 30 === 0) {
+                    labels.push(`${hours}:${minutes}`);
+                } else {
+                    labels.push('');
+                }
             }
 
-            // 统计每个时间段的访问次数
+            // 统计每个5分钟时间段的访问次数
             timestamps.forEach(ts => {
                 if (!ts) return;
                 const time = new Date(ts);
@@ -552,10 +558,10 @@
 
                 // 只统计最近24小时内的
                 if (diffMinutes >= 0 && diffMinutes < 24 * 60) {
-                    // 计算属于哪个半小时区间（从后往前数）
-                    const slotIndex = Math.floor(diffMinutes / 30);
-                    if (slotIndex >= 0 && slotIndex < 48) {
-                        counts[47 - slotIndex]++;
+                    // 计算属于哪个5分钟区间（从后往前数）
+                    const slotIndex = Math.floor(diffMinutes / 5);
+                    if (slotIndex >= 0 && slotIndex < 288) {
+                        counts[287 - slotIndex]++;
                     }
                 }
             });
@@ -569,8 +575,8 @@
                 const response = await API.stats.getHourlyAdmin();
                 const timestamps = response.data.timestamps;
 
-                // 按半小时分组
-                const { labels, counts } = groupByHalfHour(timestamps);
+                // 按5分钟分组
+                const { labels, counts } = groupByFiveMinutes(timestamps);
 
                 // 销毁旧图表
                 if (hourlyAdminChart) {
@@ -579,16 +585,15 @@
 
                 const ctx = document.getElementById('hourlyAdminChart').getContext('2d');
                 hourlyAdminChart = new Chart(ctx, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: labels,
                         datasets: [{
                             label: '访问次数',
                             data: counts,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
                             borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true
+                            borderWidth: 1
                         }]
                     },
                     options: {
@@ -601,7 +606,13 @@
                             tooltip: {
                                 callbacks: {
                                     title: function(context) {
-                                        return `时间: ${context[0].label}`;
+                                        // 计算实际时间
+                                        const index = context[0].dataIndex;
+                                        const now = new Date();
+                                        const time = new Date(now.getTime() - (287 - index) * 5 * 60 * 1000);
+                                        const hours = String(time.getHours()).padStart(2, '0');
+                                        const minutes = String(time.getMinutes()).padStart(2, '0');
+                                        return `时间: ${hours}:${minutes}`;
                                     }
                                 }
                             }
@@ -625,8 +636,11 @@
                                 ticks: {
                                     maxRotation: 45,
                                     minRotation: 45,
-                                    autoSkip: true,
-                                    maxTicksLimit: 24
+                                    autoSkip: false,
+                                    callback: function(value, index) {
+                                        // 只显示非空标签
+                                        return this.getLabelForValue(index);
+                                    }
                                 }
                             }
                         }
@@ -643,8 +657,8 @@
                 const response = await API.stats.getHourlyVisitor(country);
                 const timestamps = response.data.timestamps;
 
-                // 按半小时分组
-                const { labels, counts } = groupByHalfHour(timestamps);
+                // 按5分钟分组
+                const { labels, counts } = groupByFiveMinutes(timestamps);
 
                 // 销毁旧图表
                 if (hourlyVisitorChart) {
@@ -653,16 +667,15 @@
 
                 const ctx = document.getElementById('hourlyVisitorChart').getContext('2d');
                 hourlyVisitorChart = new Chart(ctx, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: labels,
                         datasets: [{
                             label: '访问次数',
                             data: counts,
+                            backgroundColor: 'rgba(72, 187, 120, 0.8)',
                             borderColor: '#48bb78',
-                            backgroundColor: 'rgba(72, 187, 120, 0.1)',
-                            tension: 0.4,
-                            fill: true
+                            borderWidth: 1
                         }]
                     },
                     options: {
@@ -675,8 +688,14 @@
                             tooltip: {
                                 callbacks: {
                                     title: function(context) {
+                                        // 计算实际时间
+                                        const index = context[0].dataIndex;
+                                        const now = new Date();
+                                        const time = new Date(now.getTime() - (287 - index) * 5 * 60 * 1000);
+                                        const hours = String(time.getHours()).padStart(2, '0');
+                                        const minutes = String(time.getMinutes()).padStart(2, '0');
                                         const countryText = country ? ` (${country})` : '';
-                                        return `时间: ${context[0].label}${countryText}`;
+                                        return `时间: ${hours}:${minutes}${countryText}`;
                                     }
                                 }
                             }
@@ -700,8 +719,11 @@
                                 ticks: {
                                     maxRotation: 45,
                                     minRotation: 45,
-                                    autoSkip: true,
-                                    maxTicksLimit: 24
+                                    autoSkip: false,
+                                    callback: function(value, index) {
+                                        // 只显示非空标签
+                                        return this.getLabelForValue(index);
+                                    }
                                 }
                             }
                         }
