@@ -95,6 +95,35 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 管理员本地时间访问分布 -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3>🕐 管理员本地时间访问分布（最近24小时）</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="hourlyAdminChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 访问者本地时间访问分布 -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>🌐 访问者本地时间访问分布（最近24小时）</h3>
+                        <select id="visitorCountrySelect" class="btn btn-secondary" style="min-width: 150px;">
+                            <option value="">所有国家</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="hourlyVisitorChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -110,7 +139,7 @@
             }
         })();
 
-        let trendChart, deviceChart, referrerChart, locationChart;
+        let trendChart, deviceChart, referrerChart, locationChart, hourlyAdminChart, hourlyVisitorChart;
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -118,6 +147,12 @@
 
             // 监听周期选择变化
             document.getElementById('periodSelect').addEventListener('change', loadDashboard);
+
+            // 监听国家选择变化
+            document.getElementById('visitorCountrySelect').addEventListener('change', async () => {
+                const country = document.getElementById('visitorCountrySelect').value;
+                await loadHourlyVisitorChart(country);
+            });
         });
 
         // 加载仪表盘数据
@@ -141,6 +176,15 @@
                 }),
                 loadLocationChart(days).catch(err => {
                     console.error('加载地理位置统计失败:', err);
+                }),
+                loadHourlyAdminChart().catch(err => {
+                    console.error('加载管理员时间分布失败:', err);
+                }),
+                loadHourlyVisitorChart().catch(err => {
+                    console.error('加载访问者时间分布失败:', err);
+                }),
+                loadCountryList().catch(err => {
+                    console.error('加载国家列表失败:', err);
                 })
             ]);
 
@@ -481,6 +525,212 @@
                 });
             } catch (error) {
                 console.error('加载地理位置统计详细错误:', error);
+            }
+        }
+
+        // 辅助函数：按半小时分组时间戳
+        function groupByHalfHour(timestamps) {
+            // 生成48个半小时时间段的标签（从当前时间向前推24小时）
+            const now = new Date();
+            const labels = [];
+            const counts = Array(48).fill(0);
+
+            // 生成时间标签（倒序，从24小时前到现在）
+            for (let i = 47; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 30 * 60 * 1000);
+                const hours = String(time.getHours()).padStart(2, '0');
+                const minutes = time.getMinutes() === 0 ? '00' : '30';
+                labels.push(`${hours}:${minutes}`);
+            }
+
+            // 统计每个时间段的访问次数
+            timestamps.forEach(ts => {
+                if (!ts) return;
+                const time = new Date(ts);
+                const diffMs = now - time;
+                const diffMinutes = Math.floor(diffMs / 1000 / 60);
+
+                // 只统计最近24小时内的
+                if (diffMinutes >= 0 && diffMinutes < 24 * 60) {
+                    // 计算属于哪个半小时区间（从后往前数）
+                    const slotIndex = Math.floor(diffMinutes / 30);
+                    if (slotIndex >= 0 && slotIndex < 48) {
+                        counts[47 - slotIndex]++;
+                    }
+                }
+            });
+
+            return { labels, counts };
+        }
+
+        // 加载管理员本地时间访问分布
+        async function loadHourlyAdminChart() {
+            try {
+                const response = await API.stats.getHourlyAdmin();
+                const timestamps = response.data.timestamps;
+
+                // 按半小时分组
+                const { labels, counts } = groupByHalfHour(timestamps);
+
+                // 销毁旧图表
+                if (hourlyAdminChart) {
+                    hourlyAdminChart.destroy();
+                }
+
+                const ctx = document.getElementById('hourlyAdminChart').getContext('2d');
+                hourlyAdminChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '访问次数',
+                            data: counts,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return `时间: ${context[0].label}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: '访问次数'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '时间（管理员本地时间）'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 24
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('加载管理员时间分布详细错误:', error);
+            }
+        }
+
+        // 加载访问者本地时间访问分布
+        async function loadHourlyVisitorChart(country = null) {
+            try {
+                const response = await API.stats.getHourlyVisitor(country);
+                const timestamps = response.data.timestamps;
+
+                // 按半小时分组
+                const { labels, counts } = groupByHalfHour(timestamps);
+
+                // 销毁旧图表
+                if (hourlyVisitorChart) {
+                    hourlyVisitorChart.destroy();
+                }
+
+                const ctx = document.getElementById('hourlyVisitorChart').getContext('2d');
+                hourlyVisitorChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '访问次数',
+                            data: counts,
+                            borderColor: '#48bb78',
+                            backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const countryText = country ? ` (${country})` : '';
+                                        return `时间: ${context[0].label}${countryText}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: '访问次数'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '时间（访问者本地时间）'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 24
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('加载访问者时间分布详细错误:', error);
+            }
+        }
+
+        // 加载国家列表到下拉框
+        async function loadCountryList() {
+            try {
+                const response = await API.stats.getLocations(30); // 获取最近30天的国家数据
+                const countries = response.data.countries;
+
+                const select = document.getElementById('visitorCountrySelect');
+                // 保留"所有国家"选项
+                select.innerHTML = '<option value="">所有国家</option>';
+
+                // 添加国家选项
+                countries.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.code;
+                    option.textContent = `${country.code} (${country.count})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载国家列表详细错误:', error);
             }
         }
     </script>

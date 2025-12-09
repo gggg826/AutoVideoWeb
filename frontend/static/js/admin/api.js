@@ -112,6 +112,15 @@ const API = {
 
     async getReferrers(days = 7) {
       return await API.get('/admin/stats/referrers', { days });
+    },
+
+    async getHourlyAdmin() {
+      return await API.get('/admin/stats/hourly-admin');
+    },
+
+    async getHourlyVisitor(country = null) {
+      const params = country ? { country } : {};
+      return await API.get('/admin/stats/hourly-visitor', params);
     }
   },
 

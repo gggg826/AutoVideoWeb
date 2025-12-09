@@ -511,6 +511,127 @@ async def get_referrer_stats(
     }
 
 
+@router.get("/stats/hourly-admin", summary="获取管理员本地时间访问分布")
+async def get_hourly_admin_stats(db: AsyncSession = Depends(get_db)):
+    """
+    获取最近24小时的访问分布（管理员本地时间）
+    返回原始时间戳，由前端转换为浏览器本地时间
+    """
+    # 获取最近24小时的访问记录
+    time_24h_ago = datetime.utcnow() - timedelta(hours=24)
+
+    stmt = select(Visit.timestamp).where(
+        Visit.timestamp >= time_24h_ago
+    ).order_by(Visit.timestamp)
+
+    result = await db.execute(stmt)
+    timestamps = [row[0] for row in result]
+
+    # 将datetime对象转换为ISO格式字符串
+    timestamps_iso = [ts.isoformat() if ts else None for ts in timestamps]
+
+    return {
+        "success": True,
+        "data": {
+            "timestamps": timestamps_iso
+        }
+    }
+
+
+@router.get("/stats/hourly-visitor", summary="获取访问者本地时间访问分布")
+async def get_hourly_visitor_stats(
+    country: Optional[str] = Query(None, description="国家代码筛选"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    获取最近24小时的访问分布（访问者本地时间）
+    根据访问者的timezone和country推算其本地时间
+    """
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        # Python 3.8 fallback
+        from backports.zoneinfo import ZoneInfo
+
+    # 国家到时区的映射（主要时区）
+    country_timezone_map = {
+        'US': 'America/New_York',
+        'CN': 'Asia/Shanghai',
+        'JP': 'Asia/Tokyo',
+        'KR': 'Asia/Seoul',
+        'GB': 'Europe/London',
+        'FR': 'Europe/Paris',
+        'DE': 'Europe/Berlin',
+        'AU': 'Australia/Sydney',
+        'CA': 'America/Toronto',
+        'IN': 'Asia/Kolkata',
+        'BR': 'America/Sao_Paulo',
+        'RU': 'Europe/Moscow',
+        'SG': 'Asia/Singapore',
+        'HK': 'Asia/Hong_Kong',
+        'TW': 'Asia/Taipei',
+    }
+
+    # 获取最近24小时的访问记录
+    time_24h_ago = datetime.utcnow() - timedelta(hours=24)
+
+    stmt = select(Visit.timestamp, Visit.timezone, Visit.ip_country).where(
+        Visit.timestamp >= time_24h_ago
+    )
+
+    # 如果指定了国家，则筛选
+    if country:
+        stmt = stmt.where(Visit.ip_country == country)
+
+    stmt = stmt.order_by(Visit.timestamp)
+
+    result = await db.execute(stmt)
+    records = [(row[0], row[1], row[2]) for row in result]
+
+    # 转换为访问者本地时间
+    local_timestamps = []
+    for timestamp, visitor_tz, ip_country in records:
+        if not timestamp:
+            continue
+
+        try:
+            # 优先使用访问者的timezone字段
+            if visitor_tz:
+                # 尝试解析timezone字符串（如 "Asia/Shanghai"）
+                try:
+                    tz = ZoneInfo(visitor_tz)
+                    # 假设timestamp是aware datetime (UTC)
+                    if timestamp.tzinfo is None:
+                        timestamp = timestamp.replace(tzinfo=ZoneInfo('UTC'))
+                    local_time = timestamp.astimezone(tz)
+                    local_timestamps.append(local_time.isoformat())
+                    continue
+                except:
+                    pass
+
+            # 如果没有timezone字段，使用国家映射
+            if ip_country and ip_country in country_timezone_map:
+                tz = ZoneInfo(country_timezone_map[ip_country])
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=ZoneInfo('UTC'))
+                local_time = timestamp.astimezone(tz)
+                local_timestamps.append(local_time.isoformat())
+            else:
+                # 无法确定时区，使用UTC
+                local_timestamps.append(timestamp.isoformat())
+        except Exception as e:
+            # 出错时使用原始时间
+            local_timestamps.append(timestamp.isoformat() if timestamp else None)
+
+    return {
+        "success": True,
+        "data": {
+            "timestamps": local_timestamps,
+            "country": country
+        }
+    }
+
+
 @router.post("/clear-visits", summary="清空所有访问记录")
 async def clear_all_visits(db: AsyncSession = Depends(get_db)):
     """
