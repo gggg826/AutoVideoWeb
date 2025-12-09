@@ -575,8 +575,12 @@
                 const response = await API.stats.getHourlyAdmin();
                 const timestamps = response.data.timestamps;
 
+                console.log('管理员时间分布 - 总访问数:', timestamps.length);
+
                 // 按5分钟分组
                 const { labels, counts } = groupByFiveMinutes(timestamps);
+
+                console.log('管理员时间分布 - 数据点数:', counts.length, '非零数据:', counts.filter(c => c > 0).length);
 
                 // 销毁旧图表
                 if (hourlyAdminChart) {
@@ -593,17 +597,27 @@
                             data: counts,
                             backgroundColor: 'rgba(102, 126, 234, 0.8)',
                             borderColor: '#667eea',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            barPercentage: 0.9,
+                            categoryPercentage: 1.0
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: false,
+                            axis: 'x'
+                        },
                         plugins: {
                             legend: {
                                 display: false
                             },
                             tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
                                 callbacks: {
                                     title: function(context) {
                                         // 计算实际时间
@@ -613,6 +627,9 @@
                                         const hours = String(time.getHours()).padStart(2, '0');
                                         const minutes = String(time.getMinutes()).padStart(2, '0');
                                         return `时间: ${hours}:${minutes}`;
+                                    },
+                                    label: function(context) {
+                                        return `访问次数: ${context.parsed.y}`;
                                     }
                                 }
                             }
@@ -621,7 +638,8 @@
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    stepSize: 1
+                                    stepSize: 1,
+                                    precision: 0
                                 },
                                 title: {
                                     display: true,
@@ -657,8 +675,12 @@
                 const response = await API.stats.getHourlyVisitor(country);
                 const timestamps = response.data.timestamps;
 
+                console.log('访问者时间分布 - 总访问数:', timestamps.length, '国家:', country || '全部');
+
                 // 按5分钟分组
                 const { labels, counts } = groupByFiveMinutes(timestamps);
+
+                console.log('访问者时间分布 - 数据点数:', counts.length, '非零数据:', counts.filter(c => c > 0).length);
 
                 // 销毁旧图表
                 if (hourlyVisitorChart) {
@@ -675,17 +697,27 @@
                             data: counts,
                             backgroundColor: 'rgba(72, 187, 120, 0.8)',
                             borderColor: '#48bb78',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            barPercentage: 0.9,
+                            categoryPercentage: 1.0
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: false,
+                            axis: 'x'
+                        },
                         plugins: {
                             legend: {
                                 display: false
                             },
                             tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
                                 callbacks: {
                                     title: function(context) {
                                         // 计算实际时间
@@ -696,6 +728,9 @@
                                         const minutes = String(time.getMinutes()).padStart(2, '0');
                                         const countryText = country ? ` (${country})` : '';
                                         return `时间: ${hours}:${minutes}${countryText}`;
+                                    },
+                                    label: function(context) {
+                                        return `访问次数: ${context.parsed.y}`;
                                     }
                                 }
                             }
@@ -704,7 +739,8 @@
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    stepSize: 1
+                                    stepSize: 1,
+                                    precision: 0
                                 },
                                 title: {
                                     display: true,
