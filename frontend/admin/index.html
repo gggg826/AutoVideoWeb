@@ -99,7 +99,15 @@
             <!-- 管理员本地时间访问分布 -->
             <div class="card" style="margin-top: 20px;">
                 <div class="card-header">
-                    <h3>🕐 管理员本地时间访问分布（最近24小时）</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>🕐 管理员本地时间访问分布（最近24小时）</h3>
+                        <select id="adminGranularitySelect" class="btn btn-secondary" style="min-width: 120px;">
+                            <option value="5">5分钟</option>
+                            <option value="15">15分钟</option>
+                            <option value="30">30分钟</option>
+                            <option value="60">1小时</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -111,11 +119,19 @@
             <!-- 访问者本地时间访问分布 -->
             <div class="card" style="margin-top: 20px;">
                 <div class="card-header">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <h3>🌐 访问者本地时间访问分布（最近24小时）</h3>
-                        <select id="visitorCountrySelect" class="btn btn-secondary" style="min-width: 150px;">
-                            <option value="">所有国家</option>
-                        </select>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="visitorGranularitySelect" class="btn btn-secondary" style="min-width: 120px;">
+                                <option value="5">5分钟</option>
+                                <option value="15">15分钟</option>
+                                <option value="30">30分钟</option>
+                                <option value="60">1小时</option>
+                            </select>
+                            <select id="visitorCountrySelect" class="btn btn-secondary" style="min-width: 150px;">
+                                <option value="">所有国家</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -147,6 +163,17 @@
 
             // 监听周期选择变化
             document.getElementById('periodSelect').addEventListener('change', loadDashboard);
+
+            // 监听管理员时间粒度选择变化
+            document.getElementById('adminGranularitySelect').addEventListener('change', async () => {
+                await loadHourlyAdminChart();
+            });
+
+            // 监听访问者时间粒度选择变化
+            document.getElementById('visitorGranularitySelect').addEventListener('change', async () => {
+                const country = document.getElementById('visitorCountrySelect').value;
+                await loadHourlyVisitorChart(country);
+            });
 
             // 监听国家选择变化
             document.getElementById('visitorCountrySelect').addEventListener('change', async () => {
@@ -528,28 +555,41 @@
             }
         }
 
-        // 辅助函数：按5分钟分组时间戳
-        function groupByFiveMinutes(timestamps) {
-            // 生成288个5分钟时间段（24小时 * 12个5分钟区间）
+        // 辅助函数：按指定时间间隔分组时间戳
+        function groupByInterval(timestamps, intervalMinutes) {
+            // 计算总共需要多少个时间段（24小时）
+            const totalSlots = Math.floor((24 * 60) / intervalMinutes);
             const now = new Date();
             const labels = [];
-            const counts = Array(288).fill(0);
+            const counts = Array(totalSlots).fill(0);
 
-            // 生成时间标签（每5分钟一个，但只在半小时刻度显示标签）
-            for (let i = 287; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 5 * 60 * 1000);
+            // 确定标签显示间隔（根据时间粒度自适应）
+            let labelInterval;
+            if (intervalMinutes <= 5) {
+                labelInterval = 30; // 5分钟粒度：每半小时显示一次标签
+            } else if (intervalMinutes <= 15) {
+                labelInterval = 60; // 15分钟粒度：每小时显示一次标签
+            } else if (intervalMinutes <= 30) {
+                labelInterval = 60; // 30分钟粒度：每小时显示一次标签
+            } else {
+                labelInterval = 120; // 1小时粒度：每两小时显示一次标签
+            }
+
+            // 生成时间标签
+            for (let i = totalSlots - 1; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * intervalMinutes * 60 * 1000);
                 const hours = String(time.getHours()).padStart(2, '0');
                 const minutes = String(time.getMinutes()).padStart(2, '0');
 
-                // 只在半小时刻度显示标签，其他为空字符串
-                if (time.getMinutes() % 30 === 0) {
+                // 根据labelInterval决定是否显示标签
+                if (time.getMinutes() % labelInterval === 0 && time.getMinutes() === Math.floor(time.getMinutes() / intervalMinutes) * intervalMinutes) {
                     labels.push(`${hours}:${minutes}`);
                 } else {
                     labels.push('');
                 }
             }
 
-            // 统计每个5分钟时间段的访问次数
+            // 统计每个时间段的访问次数
             timestamps.forEach(ts => {
                 if (!ts) return;
                 const time = new Date(ts);
@@ -558,15 +598,15 @@
 
                 // 只统计最近24小时内的
                 if (diffMinutes >= 0 && diffMinutes < 24 * 60) {
-                    // 计算属于哪个5分钟区间（从后往前数）
-                    const slotIndex = Math.floor(diffMinutes / 5);
-                    if (slotIndex >= 0 && slotIndex < 288) {
-                        counts[287 - slotIndex]++;
+                    // 计算属于哪个时间区间（从后往前数）
+                    const slotIndex = Math.floor(diffMinutes / intervalMinutes);
+                    if (slotIndex >= 0 && slotIndex < totalSlots) {
+                        counts[totalSlots - 1 - slotIndex]++;
                     }
                 }
             });
 
-            return { labels, counts };
+            return { labels, counts, intervalMinutes };
         }
 
         // 加载管理员本地时间访问分布
@@ -575,10 +615,13 @@
                 const response = await API.stats.getHourlyAdmin();
                 const timestamps = response.data.timestamps;
 
-                console.log('管理员时间分布 - 总访问数:', timestamps.length);
+                // 获取选中的时间粒度
+                const intervalMinutes = parseInt(document.getElementById('adminGranularitySelect').value);
 
-                // 按5分钟分组
-                const { labels, counts } = groupByFiveMinutes(timestamps);
+                console.log('管理员时间分布 - 总访问数:', timestamps.length, '时间粒度:', intervalMinutes, '分钟');
+
+                // 按选定的时间间隔分组
+                const { labels, counts } = groupByInterval(timestamps, intervalMinutes);
 
                 console.log('管理员时间分布 - 数据点数:', counts.length, '非零数据:', counts.filter(c => c > 0).length);
 
@@ -620,10 +663,11 @@
                                 intersect: false,
                                 callbacks: {
                                     title: function(context) {
-                                        // 计算实际时间
+                                        // 计算实际时间（使用动态的时间间隔）
                                         const index = context[0].dataIndex;
+                                        const totalSlots = Math.floor((24 * 60) / intervalMinutes);
                                         const now = new Date();
-                                        const time = new Date(now.getTime() - (287 - index) * 5 * 60 * 1000);
+                                        const time = new Date(now.getTime() - (totalSlots - 1 - index) * intervalMinutes * 60 * 1000);
                                         const hours = String(time.getHours()).padStart(2, '0');
                                         const minutes = String(time.getMinutes()).padStart(2, '0');
                                         return `时间: ${hours}:${minutes}`;
@@ -675,10 +719,13 @@
                 const response = await API.stats.getHourlyVisitor(country);
                 const timestamps = response.data.timestamps;
 
-                console.log('访问者时间分布 - 总访问数:', timestamps.length, '国家:', country || '全部');
+                // 获取选中的时间粒度
+                const intervalMinutes = parseInt(document.getElementById('visitorGranularitySelect').value);
 
-                // 按5分钟分组
-                const { labels, counts } = groupByFiveMinutes(timestamps);
+                console.log('访问者时间分布 - 总访问数:', timestamps.length, '国家:', country || '全部', '时间粒度:', intervalMinutes, '分钟');
+
+                // 按选定的时间间隔分组
+                const { labels, counts } = groupByInterval(timestamps, intervalMinutes);
 
                 console.log('访问者时间分布 - 数据点数:', counts.length, '非零数据:', counts.filter(c => c > 0).length);
 
@@ -720,10 +767,11 @@
                                 intersect: false,
                                 callbacks: {
                                     title: function(context) {
-                                        // 计算实际时间
+                                        // 计算实际时间（使用动态的时间间隔）
                                         const index = context[0].dataIndex;
+                                        const totalSlots = Math.floor((24 * 60) / intervalMinutes);
                                         const now = new Date();
-                                        const time = new Date(now.getTime() - (287 - index) * 5 * 60 * 1000);
+                                        const time = new Date(now.getTime() - (totalSlots - 1 - index) * intervalMinutes * 60 * 1000);
                                         const hours = String(time.getHours()).padStart(2, '0');
                                         const minutes = String(time.getMinutes()).padStart(2, '0');
                                         const countryText = country ? ` (${country})` : '';
