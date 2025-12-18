@@ -253,6 +253,21 @@
                         </div>
 
                         <div>
+                            <h3>浏览器地理位置 ${visit.browser_latitude ? '✅' : '🔒 未授权'}</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                ${visit.browser_latitude ? `
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>纬度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.browser_latitude.toFixed(6)}°</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>经度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.browser_longitude.toFixed(6)}°</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>精度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.browser_accuracy ? visit.browser_accuracy.toFixed(0) + '米' : '-'}</td></tr>
+                                ${visit.browser_altitude !== null ? `<tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>海拔:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.browser_altitude.toFixed(1)}米</td></tr>` : ''}
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>坐标链接:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;"><a href="https://www.google.com/maps?q=${visit.browser_latitude},${visit.browser_longitude}" target="_blank" style="color:#667eea">📍 在地图上查看</a></td></tr>
+                                ` : `
+                                <tr><td colspan="2" style="padding:8px; text-align:center; color:#999;">用户未授权浏览器地理位置访问</td></tr>
+                                `}
+                            </table>
+                        </div>
+
+                        <div>
                             <h3>行为数据</h3>
                             <table style="width:100%; border-collapse: collapse;">
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>停留时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.duration(visit.stay_duration)}</td></tr>

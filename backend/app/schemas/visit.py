@@ -24,6 +24,9 @@ class VisitCreate(BaseModel):
     webgl_fingerprint: Optional[str] = Field(None, description="WebGL 指纹哈希")
     fonts_hash: Optional[str] = Field(None, description="字体列表哈希")
 
+    # 浏览器地理位置（用户授权后获取）
+    geolocation: Optional[Dict[str, Any]] = Field(None, description="浏览器地理位置信息")
+
     # 额外数据（可选）
     extra_data: Optional[Dict[str, Any]] = Field(None, description="其他元数据")
 

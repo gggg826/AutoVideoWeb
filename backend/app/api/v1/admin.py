@@ -160,6 +160,13 @@ async def get_visit_detail(
             "webgl_fingerprint": visit.webgl_fingerprint,
             "fonts_hash": visit.fonts_hash,
 
+            # 浏览器地理位置（用户授权后获取）
+            "browser_latitude": visit.browser_latitude,
+            "browser_longitude": visit.browser_longitude,
+            "browser_accuracy": visit.browser_accuracy,
+            "browser_altitude": visit.browser_altitude,
+            "browser_altitude_accuracy": visit.browser_altitude_accuracy,
+
             # 行为数据
             "stay_duration": visit.stay_duration,
             "scroll_depth": visit.scroll_depth,

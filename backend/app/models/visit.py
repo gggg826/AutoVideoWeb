@@ -55,6 +55,13 @@ class Visit(Base):
     webgl_fingerprint = Column(String(64), comment="WebGL 指纹")
     fonts_hash = Column(String(64), comment="字体列表哈希")
 
+    # 浏览器地理位置（用户授权后获取）
+    browser_latitude = Column(Float, comment="浏览器纬度")
+    browser_longitude = Column(Float, comment="浏览器经度")
+    browser_accuracy = Column(Float, comment="浏览器位置精度（米）")
+    browser_altitude = Column(Float, comment="浏览器海拔高度")
+    browser_altitude_accuracy = Column(Float, comment="浏览器海拔精度")
+
     # 行为数据
     stay_duration = Column(Integer, default=0, comment="停留时间（秒）")
     scroll_depth = Column(Integer, default=0, comment="滚动深度（%）")

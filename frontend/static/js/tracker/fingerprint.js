@@ -118,10 +118,66 @@ const FingerprintCollector = {
   },
 
   /**
+   * 获取浏览器地理位置（需要用户授权）
+   * @returns {Promise<Object|null>} 地理位置数据或 null
+   */
+  async getGeolocation() {
+    return new Promise((resolve) => {
+      // 检查浏览器是否支持地理位置API
+      if (!navigator.geolocation) {
+        console.log('浏览器不支持地理位置API');
+        resolve(null);
+        return;
+      }
+
+      // 请求地理位置（不阻塞页面加载）
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // 成功获取位置
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            altitude_accuracy: position.coords.altitudeAccuracy
+          };
+          console.log('✅ 获取到浏览器地理位置:', coords);
+          resolve(coords);
+        },
+        (error) => {
+          // 用户拒绝或其他错误
+          let errorMsg = '未知错误';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = '用户拒绝地理位置授权';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = '位置信息不可用';
+              break;
+            case error.TIMEOUT:
+              errorMsg = '获取位置超时';
+              break;
+          }
+          console.log(`⚠️ 地理位置获取失败: ${errorMsg}`);
+          resolve(null);
+        },
+        {
+          timeout: 8000,           // 8秒超时
+          maximumAge: 300000,      // 接受5分钟内的缓存位置
+          enableHighAccuracy: false // 不启用高精度（避免过长等待）
+        }
+      );
+    });
+  },
+
+  /**
    * 收集所有指纹信息
    * @returns {Promise<Object>} 指纹数据对象
    */
   async collect() {
+    // 获取地理位置（异步，不阻塞其他指纹采集）
+    const geolocation = await this.getGeolocation();
+
     return {
       canvas_fingerprint: this.getCanvasFingerprint(),
       webgl_fingerprint: this.getWebGLFingerprint(),
@@ -130,6 +186,8 @@ const FingerprintCollector = {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: navigator.language,
       platform: navigator.platform,
+      // 浏览器地理位置（可能为 null）
+      geolocation: geolocation
     };
   }
 };

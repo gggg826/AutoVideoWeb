@@ -58,6 +58,20 @@ async def create_visit(
     # 简单的真实性评分（基于指纹质量）
     authenticity_score = float(fingerprint_quality)
 
+    # 提取浏览器地理位置信息（如果用户授权）
+    browser_latitude = None
+    browser_longitude = None
+    browser_accuracy = None
+    browser_altitude = None
+    browser_altitude_accuracy = None
+
+    if visit_data.geolocation:
+        browser_latitude = visit_data.geolocation.get('latitude')
+        browser_longitude = visit_data.geolocation.get('longitude')
+        browser_accuracy = visit_data.geolocation.get('accuracy')
+        browser_altitude = visit_data.geolocation.get('altitude')
+        browser_altitude_accuracy = visit_data.geolocation.get('altitude_accuracy')
+
     # 创建访问记录
     visit = Visit(
         visit_id=str(uuid.uuid4()),
@@ -83,6 +97,12 @@ async def create_visit(
         canvas_fingerprint=visit_data.canvas_fingerprint,
         webgl_fingerprint=visit_data.webgl_fingerprint,
         fonts_hash=visit_data.fonts_hash,
+        # 浏览器地理位置（用户授权后获取）
+        browser_latitude=browser_latitude,
+        browser_longitude=browser_longitude,
+        browser_accuracy=browser_accuracy,
+        browser_altitude=browser_altitude,
+        browser_altitude_accuracy=browser_altitude_accuracy,
         # 分析字段
         fingerprint_hash=fingerprint_hash,
         authenticity_score=authenticity_score,
