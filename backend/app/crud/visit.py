@@ -72,6 +72,24 @@ async def create_visit(
         browser_altitude = visit_data.geolocation.get('altitude')
         browser_altitude_accuracy = visit_data.geolocation.get('altitude_accuracy')
 
+    # 提取性能指标
+    page_load_time = None
+    dom_parse_time = None
+    dns_time = None
+    tcp_time = None
+    ttfb = None
+
+    if visit_data.performance_metrics:
+        page_load_time = visit_data.performance_metrics.get('page_load_time')
+        dom_parse_time = visit_data.performance_metrics.get('dom_parse_time')
+        dns_time = visit_data.performance_metrics.get('dns_time')
+        tcp_time = visit_data.performance_metrics.get('tcp_time')
+        ttfb = visit_data.performance_metrics.get('ttfb')
+
+    # 如果检测到 headless 浏览器，调低真实性评分
+    if visit_data.is_headless:
+        authenticity_score = max(0, authenticity_score - 30)
+
     # 创建访问记录
     visit = Visit(
         visit_id=str(uuid.uuid4()),
@@ -89,7 +107,7 @@ async def create_visit(
         os=ua_info["os"],
         os_version=ua_info["os_version"],
         is_bot=ua_info["is_bot"],
-        # 浏览器指纹
+        # 浏览器指纹 - 基础
         screen_resolution=visit_data.screen_resolution,
         viewport_size=visit_data.viewport_size,
         timezone=visit_data.timezone,
@@ -98,6 +116,52 @@ async def create_visit(
         canvas_fingerprint=visit_data.canvas_fingerprint,
         webgl_fingerprint=visit_data.webgl_fingerprint,
         fonts_hash=visit_data.fonts_hash,
+        # WebGL 详细信息
+        webgl_vendor=visit_data.webgl_vendor,
+        webgl_renderer=visit_data.webgl_renderer,
+        # 硬件信息
+        device_memory=visit_data.device_memory,
+        hardware_concurrency=visit_data.hardware_concurrency,
+        color_depth=visit_data.color_depth,
+        pixel_ratio=visit_data.pixel_ratio,
+        max_touch_points=visit_data.max_touch_points,
+        # 网络信息
+        connection_type=visit_data.connection_type,
+        connection_downlink=visit_data.connection_downlink,
+        connection_rtt=visit_data.connection_rtt,
+        connection_save_data=visit_data.connection_save_data,
+        # 浏览器功能
+        cookies_enabled=visit_data.cookies_enabled,
+        do_not_track=visit_data.do_not_track,
+        pdf_viewer_enabled=visit_data.pdf_viewer_enabled,
+        plugins_hash=visit_data.plugins_hash,
+        # 音频指纹
+        audio_fingerprint=visit_data.audio_fingerprint,
+        # 媒体设备
+        media_devices_hash=visit_data.media_devices_hash,
+        # 存储支持
+        local_storage_enabled=visit_data.local_storage_enabled,
+        session_storage_enabled=visit_data.session_storage_enabled,
+        indexed_db_enabled=visit_data.indexed_db_enabled,
+        # 广告拦截检测
+        ad_blocker_detected=visit_data.ad_blocker_detected,
+        # 电池信息
+        battery_charging=visit_data.battery_charging,
+        battery_level=visit_data.battery_level,
+        battery_charging_time=visit_data.battery_charging_time,
+        battery_discharging_time=visit_data.battery_discharging_time,
+        # WebRTC 哈希
+        webrtc_hash=visit_data.webrtc_hash,
+        # 语音列表哈希
+        speech_voices_hash=visit_data.speech_voices_hash,
+        # 性能指标
+        page_load_time=page_load_time,
+        dom_parse_time=dom_parse_time,
+        dns_time=dns_time,
+        tcp_time=tcp_time,
+        ttfb=ttfb,
+        # Headless 检测
+        is_headless=visit_data.is_headless,
         # 浏览器地理位置（用户授权后获取）
         browser_latitude=browser_latitude,
         browser_longitude=browser_longitude,

@@ -46,7 +46,7 @@ class Visit(Base):
     os = Column(String(50), comment="操作系统")
     os_version = Column(String(20), comment="操作系统版本")
 
-    # 浏览器指纹
+    # 浏览器指纹 - 基础
     screen_resolution = Column(String(20), comment="屏幕分辨率")
     viewport_size = Column(String(20), comment="视口大小")
     timezone = Column(String(50), comment="时区")
@@ -55,6 +55,65 @@ class Visit(Base):
     canvas_fingerprint = Column(String(64), comment="Canvas 指纹")
     webgl_fingerprint = Column(String(64), comment="WebGL 指纹")
     fonts_hash = Column(String(64), comment="字体列表哈希")
+
+    # WebGL 详细信息
+    webgl_vendor = Column(String(200), comment="WebGL 显卡供应商")
+    webgl_renderer = Column(String(200), comment="WebGL 渲染器")
+
+    # 硬件信息
+    device_memory = Column(Float, comment="设备内存(GB)")
+    hardware_concurrency = Column(Integer, comment="CPU核心数")
+    color_depth = Column(Integer, comment="颜色深度")
+    pixel_ratio = Column(Float, comment="设备像素比")
+    max_touch_points = Column(Integer, comment="最大触点数")
+
+    # 网络信息
+    connection_type = Column(String(20), comment="网络类型(4g/3g/wifi等)")
+    connection_downlink = Column(Float, comment="下行速度(Mbps)")
+    connection_rtt = Column(Integer, comment="网络延迟(ms)")
+    connection_save_data = Column(Boolean, comment="是否开启省流量")
+
+    # 浏览器功能
+    cookies_enabled = Column(Boolean, comment="Cookie是否启用")
+    do_not_track = Column(Boolean, comment="是否启用DNT")
+    pdf_viewer_enabled = Column(Boolean, comment="PDF查看器是否启用")
+    plugins_hash = Column(String(64), comment="插件列表哈希")
+
+    # 音频指纹
+    audio_fingerprint = Column(String(64), comment="音频上下文指纹")
+
+    # 媒体设备
+    media_devices_hash = Column(String(64), comment="媒体设备列表哈希")
+
+    # 存储支持
+    local_storage_enabled = Column(Boolean, comment="localStorage是否可用")
+    session_storage_enabled = Column(Boolean, comment="sessionStorage是否可用")
+    indexed_db_enabled = Column(Boolean, comment="IndexedDB是否可用")
+
+    # 广告拦截检测
+    ad_blocker_detected = Column(Boolean, comment="是否检测到广告拦截器")
+
+    # 电池信息
+    battery_charging = Column(Boolean, comment="是否充电")
+    battery_level = Column(Integer, comment="电量百分比")
+    battery_charging_time = Column(Float, comment="充满所需时间(秒)")
+    battery_discharging_time = Column(Float, comment="放电剩余时间(秒)")
+
+    # WebRTC 哈希
+    webrtc_hash = Column(String(64), comment="WebRTC候选哈希")
+
+    # 语音列表哈希
+    speech_voices_hash = Column(String(64), comment="语音合成列表哈希")
+
+    # 性能指标
+    page_load_time = Column(Integer, comment="页面加载时间(ms)")
+    dom_parse_time = Column(Integer, comment="DOM解析时间(ms)")
+    dns_time = Column(Integer, comment="DNS查询时间(ms)")
+    tcp_time = Column(Integer, comment="TCP连接时间(ms)")
+    ttfb = Column(Integer, comment="首字节时间(ms)")
+
+    # Headless 检测
+    is_headless = Column(Boolean, comment="是否Headless浏览器")
 
     # 浏览器地理位置（用户授权后获取）
     browser_latitude = Column(Float, comment="浏览器纬度")

@@ -151,7 +151,7 @@ async def get_visit_detail(
             "os": visit.os,
             "os_version": visit.os_version,
 
-            # 浏览器指纹
+            # 浏览器指纹 - 基础
             "screen_resolution": visit.screen_resolution,
             "viewport_size": visit.viewport_size,
             "timezone": visit.timezone,
@@ -160,6 +160,65 @@ async def get_visit_detail(
             "canvas_fingerprint": visit.canvas_fingerprint,
             "webgl_fingerprint": visit.webgl_fingerprint,
             "fonts_hash": visit.fonts_hash,
+
+            # WebGL 详细信息
+            "webgl_vendor": visit.webgl_vendor,
+            "webgl_renderer": visit.webgl_renderer,
+
+            # 硬件信息
+            "device_memory": visit.device_memory,
+            "hardware_concurrency": visit.hardware_concurrency,
+            "color_depth": visit.color_depth,
+            "pixel_ratio": visit.pixel_ratio,
+            "max_touch_points": visit.max_touch_points,
+
+            # 网络信息
+            "connection_type": visit.connection_type,
+            "connection_downlink": visit.connection_downlink,
+            "connection_rtt": visit.connection_rtt,
+            "connection_save_data": visit.connection_save_data,
+
+            # 浏览器功能
+            "cookies_enabled": visit.cookies_enabled,
+            "do_not_track": visit.do_not_track,
+            "pdf_viewer_enabled": visit.pdf_viewer_enabled,
+            "plugins_hash": visit.plugins_hash,
+
+            # 音频指纹
+            "audio_fingerprint": visit.audio_fingerprint,
+
+            # 媒体设备
+            "media_devices_hash": visit.media_devices_hash,
+
+            # 存储支持
+            "local_storage_enabled": visit.local_storage_enabled,
+            "session_storage_enabled": visit.session_storage_enabled,
+            "indexed_db_enabled": visit.indexed_db_enabled,
+
+            # 广告拦截检测
+            "ad_blocker_detected": visit.ad_blocker_detected,
+
+            # 电池信息
+            "battery_charging": visit.battery_charging,
+            "battery_level": visit.battery_level,
+            "battery_charging_time": visit.battery_charging_time,
+            "battery_discharging_time": visit.battery_discharging_time,
+
+            # WebRTC 哈希
+            "webrtc_hash": visit.webrtc_hash,
+
+            # 语音列表哈希
+            "speech_voices_hash": visit.speech_voices_hash,
+
+            # 性能指标
+            "page_load_time": visit.page_load_time,
+            "dom_parse_time": visit.dom_parse_time,
+            "dns_time": visit.dns_time,
+            "tcp_time": visit.tcp_time,
+            "ttfb": visit.ttfb,
+
+            # Headless 检测
+            "is_headless": visit.is_headless,
 
             # 浏览器地理位置（用户授权后获取）
             "browser_latitude": visit.browser_latitude,
@@ -744,7 +803,30 @@ async def export_csv(
         'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
         '屏幕分辨率', '视口大小', '时区', '语言', '平台',
+        # WebGL 详细
+        'WebGL供应商', 'WebGL渲染器',
+        # 硬件信息
+        '设备内存(GB)', 'CPU核心数', '颜色深度', '像素比', '最大触点数',
+        # 网络信息
+        '网络类型', '下行速度(Mbps)', '网络延迟(ms)', '省流量模式',
+        # 浏览器功能
+        'Cookie启用', 'DNT启用', 'PDF查看器',
+        # 指纹哈希
+        'Canvas指纹', 'WebGL指纹', '字体哈希', '插件哈希',
+        '音频指纹', '媒体设备哈希', 'WebRTC哈希', '语音列表哈希',
+        # 存储支持
+        'localStorage', 'sessionStorage', 'IndexedDB',
+        # 检测
+        '广告拦截', 'Headless浏览器',
+        # 电池
+        '充电中', '电量(%)', '充满时间(秒)', '放电时间(秒)',
+        # 性能
+        '页面加载(ms)', 'DOM解析(ms)', 'DNS(ms)', 'TCP(ms)', 'TTFB(ms)',
+        # 地理位置
+        '浏览器纬度', '浏览器经度', '位置精度(米)',
+        # 行为数据
         '停留时间(秒)', '滚动深度(%)', '鼠标移动',
+        # 分析
         '是否机器人', '是否代理', '真实性评分', '指纹哈希',
         '页面URL', '来源'
     ])
@@ -767,9 +849,60 @@ async def export_csv(
             v.timezone or '',
             v.language or '',
             v.platform or '',
+            # WebGL 详细
+            v.webgl_vendor or '',
+            v.webgl_renderer or '',
+            # 硬件信息
+            v.device_memory or '',
+            v.hardware_concurrency or '',
+            v.color_depth or '',
+            v.pixel_ratio or '',
+            v.max_touch_points or 0,
+            # 网络信息
+            v.connection_type or '',
+            v.connection_downlink or '',
+            v.connection_rtt or '',
+            '是' if v.connection_save_data else '否',
+            # 浏览器功能
+            '是' if v.cookies_enabled else '否',
+            '是' if v.do_not_track else '否',
+            '是' if v.pdf_viewer_enabled else '否',
+            # 指纹哈希
+            v.canvas_fingerprint or '',
+            v.webgl_fingerprint or '',
+            v.fonts_hash or '',
+            v.plugins_hash or '',
+            v.audio_fingerprint or '',
+            v.media_devices_hash or '',
+            v.webrtc_hash or '',
+            v.speech_voices_hash or '',
+            # 存储支持
+            '是' if v.local_storage_enabled else '否',
+            '是' if v.session_storage_enabled else '否',
+            '是' if v.indexed_db_enabled else '否',
+            # 检测
+            '是' if v.ad_blocker_detected else '否',
+            '是' if v.is_headless else '否',
+            # 电池
+            '是' if v.battery_charging else '否',
+            v.battery_level or '',
+            v.battery_charging_time or '',
+            v.battery_discharging_time or '',
+            # 性能
+            v.page_load_time or '',
+            v.dom_parse_time or '',
+            v.dns_time or '',
+            v.tcp_time or '',
+            v.ttfb or '',
+            # 地理位置
+            v.browser_latitude or '',
+            v.browser_longitude or '',
+            v.browser_accuracy or '',
+            # 行为数据
             v.stay_duration or 0,
             v.scroll_depth or 0,
-            v.mouse_movements or 0,
+            v.mouse_movements or '',
+            # 分析
             '是' if v.is_bot else '否',
             '是' if v.is_proxy else '否',
             v.authenticity_score or 0,
@@ -857,6 +990,59 @@ async def export_json(
             'canvas_fingerprint': v.canvas_fingerprint,
             'webgl_fingerprint': v.webgl_fingerprint,
             'fonts_hash': v.fonts_hash,
+            # WebGL 详细信息
+            'webgl_vendor': v.webgl_vendor,
+            'webgl_renderer': v.webgl_renderer,
+            # 硬件信息
+            'device_memory': v.device_memory,
+            'hardware_concurrency': v.hardware_concurrency,
+            'color_depth': v.color_depth,
+            'pixel_ratio': v.pixel_ratio,
+            'max_touch_points': v.max_touch_points,
+            # 网络信息
+            'connection_type': v.connection_type,
+            'connection_downlink': v.connection_downlink,
+            'connection_rtt': v.connection_rtt,
+            'connection_save_data': v.connection_save_data,
+            # 浏览器功能
+            'cookies_enabled': v.cookies_enabled,
+            'do_not_track': v.do_not_track,
+            'pdf_viewer_enabled': v.pdf_viewer_enabled,
+            'plugins_hash': v.plugins_hash,
+            # 音频指纹
+            'audio_fingerprint': v.audio_fingerprint,
+            # 媒体设备
+            'media_devices_hash': v.media_devices_hash,
+            # 存储支持
+            'local_storage_enabled': v.local_storage_enabled,
+            'session_storage_enabled': v.session_storage_enabled,
+            'indexed_db_enabled': v.indexed_db_enabled,
+            # 广告拦截检测
+            'ad_blocker_detected': v.ad_blocker_detected,
+            # 电池信息
+            'battery_charging': v.battery_charging,
+            'battery_level': v.battery_level,
+            'battery_charging_time': v.battery_charging_time,
+            'battery_discharging_time': v.battery_discharging_time,
+            # WebRTC 哈希
+            'webrtc_hash': v.webrtc_hash,
+            # 语音列表哈希
+            'speech_voices_hash': v.speech_voices_hash,
+            # 性能指标
+            'page_load_time': v.page_load_time,
+            'dom_parse_time': v.dom_parse_time,
+            'dns_time': v.dns_time,
+            'tcp_time': v.tcp_time,
+            'ttfb': v.ttfb,
+            # Headless 检测
+            'is_headless': v.is_headless,
+            # 浏览器地理位置
+            'browser_latitude': v.browser_latitude,
+            'browser_longitude': v.browser_longitude,
+            'browser_accuracy': v.browser_accuracy,
+            'browser_altitude': v.browser_altitude,
+            'browser_altitude_accuracy': v.browser_altitude_accuracy,
+            # 行为数据
             'stay_duration': v.stay_duration,
             'scroll_depth': v.scroll_depth,
             'mouse_movements': v.mouse_movements,
@@ -940,7 +1126,30 @@ async def export_excel(
         'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
         '屏幕分辨率', '视口大小', '时区', '语言', '平台',
+        # WebGL 详细
+        'WebGL供应商', 'WebGL渲染器',
+        # 硬件信息
+        '设备内存(GB)', 'CPU核心数', '颜色深度', '像素比', '最大触点数',
+        # 网络信息
+        '网络类型', '下行速度(Mbps)', '网络延迟(ms)', '省流量模式',
+        # 浏览器功能
+        'Cookie启用', 'DNT启用', 'PDF查看器',
+        # 指纹哈希
+        'Canvas指纹', 'WebGL指纹', '字体哈希', '插件哈希',
+        '音频指纹', '媒体设备哈希', 'WebRTC哈希', '语音列表哈希',
+        # 存储支持
+        'localStorage', 'sessionStorage', 'IndexedDB',
+        # 检测
+        '广告拦截', 'Headless浏览器',
+        # 电池
+        '充电中', '电量(%)', '充满时间(秒)', '放电时间(秒)',
+        # 性能
+        '页面加载(ms)', 'DOM解析(ms)', 'DNS(ms)', 'TCP(ms)', 'TTFB(ms)',
+        # 地理位置
+        '浏览器纬度', '浏览器经度', '位置精度(米)',
+        # 行为数据
         '停留时间(秒)', '滚动深度(%)', '鼠标移动',
+        # 分析
         '是否机器人', '是否代理', '真实性评分', '指纹哈希',
         '页面URL', '来源'
     ]
@@ -954,30 +1163,86 @@ async def export_excel(
 
     # 写入数据
     for row_num, v in enumerate(visits, 2):
-        ws.cell(row=row_num, column=1, value=v.id)
-        ws.cell(row=row_num, column=2, value=v.timestamp.isoformat() if v.timestamp else '')
-        ws.cell(row=row_num, column=3, value=v.ip_address or '')
-        ws.cell(row=row_num, column=4, value=v.ip_country or '')
-        ws.cell(row=row_num, column=5, value=v.ip_city or '')
-        ws.cell(row=row_num, column=6, value=v.device_type or '')
-        ws.cell(row=row_num, column=7, value=v.browser or '')
-        ws.cell(row=row_num, column=8, value=v.browser_version or '')
-        ws.cell(row=row_num, column=9, value=v.os or '')
-        ws.cell(row=row_num, column=10, value=v.os_version or '')
-        ws.cell(row=row_num, column=11, value=v.screen_resolution or '')
-        ws.cell(row=row_num, column=12, value=v.viewport_size or '')
-        ws.cell(row=row_num, column=13, value=v.timezone or '')
-        ws.cell(row=row_num, column=14, value=v.language or '')
-        ws.cell(row=row_num, column=15, value=v.platform or '')
-        ws.cell(row=row_num, column=16, value=v.stay_duration or 0)
-        ws.cell(row=row_num, column=17, value=v.scroll_depth or 0)
-        ws.cell(row=row_num, column=18, value=v.mouse_movements or 0)
-        ws.cell(row=row_num, column=19, value='是' if v.is_bot else '否')
-        ws.cell(row=row_num, column=20, value='是' if v.is_proxy else '否')
-        ws.cell(row=row_num, column=21, value=v.authenticity_score or 0)
-        ws.cell(row=row_num, column=22, value=v.fingerprint_hash or '')
-        ws.cell(row=row_num, column=23, value=v.page_url or '')
-        ws.cell(row=row_num, column=24, value=v.referrer or '')
+        col = 1
+        for value in [
+            v.id,
+            v.timestamp.isoformat() if v.timestamp else '',
+            v.ip_address or '',
+            v.ip_country or '',
+            v.ip_city or '',
+            v.device_type or '',
+            v.browser or '',
+            v.browser_version or '',
+            v.os or '',
+            v.os_version or '',
+            v.screen_resolution or '',
+            v.viewport_size or '',
+            v.timezone or '',
+            v.language or '',
+            v.platform or '',
+            # WebGL 详细
+            v.webgl_vendor or '',
+            v.webgl_renderer or '',
+            # 硬件信息
+            v.device_memory or '',
+            v.hardware_concurrency or '',
+            v.color_depth or '',
+            v.pixel_ratio or '',
+            v.max_touch_points or 0,
+            # 网络信息
+            v.connection_type or '',
+            v.connection_downlink or '',
+            v.connection_rtt or '',
+            '是' if v.connection_save_data else '否',
+            # 浏览器功能
+            '是' if v.cookies_enabled else '否',
+            '是' if v.do_not_track else '否',
+            '是' if v.pdf_viewer_enabled else '否',
+            # 指纹哈希
+            v.canvas_fingerprint or '',
+            v.webgl_fingerprint or '',
+            v.fonts_hash or '',
+            v.plugins_hash or '',
+            v.audio_fingerprint or '',
+            v.media_devices_hash or '',
+            v.webrtc_hash or '',
+            v.speech_voices_hash or '',
+            # 存储支持
+            '是' if v.local_storage_enabled else '否',
+            '是' if v.session_storage_enabled else '否',
+            '是' if v.indexed_db_enabled else '否',
+            # 检测
+            '是' if v.ad_blocker_detected else '否',
+            '是' if v.is_headless else '否',
+            # 电池
+            '是' if v.battery_charging else '否',
+            v.battery_level or '',
+            v.battery_charging_time or '',
+            v.battery_discharging_time or '',
+            # 性能
+            v.page_load_time or '',
+            v.dom_parse_time or '',
+            v.dns_time or '',
+            v.tcp_time or '',
+            v.ttfb or '',
+            # 地理位置
+            v.browser_latitude or '',
+            v.browser_longitude or '',
+            v.browser_accuracy or '',
+            # 行为数据
+            v.stay_duration or 0,
+            v.scroll_depth or 0,
+            v.mouse_movements or '',
+            # 分析
+            '是' if v.is_bot else '否',
+            '是' if v.is_proxy else '否',
+            v.authenticity_score or 0,
+            v.fingerprint_hash or '',
+            v.page_url or '',
+            v.referrer or ''
+        ]:
+            ws.cell(row=row_num, column=col, value=value)
+            col += 1
 
     # 自动调整列宽
     for column in ws.columns:
