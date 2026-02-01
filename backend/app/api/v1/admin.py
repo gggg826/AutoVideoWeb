@@ -153,6 +153,7 @@ async def get_visit_detail(
 
             # 浏览器指纹
             "screen_resolution": visit.screen_resolution,
+            "viewport_size": visit.viewport_size,
             "timezone": visit.timezone,
             "language": visit.language,
             "platform": visit.platform,
@@ -742,7 +743,7 @@ async def export_csv(
     writer.writerow([
         'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
-        '屏幕分辨率', '时区', '语言', '平台',
+        '屏幕分辨率', '视口大小', '时区', '语言', '平台',
         '停留时间(秒)', '滚动深度(%)', '鼠标移动',
         '是否机器人', '是否代理', '真实性评分', '指纹哈希',
         '页面URL', '来源'
@@ -762,6 +763,7 @@ async def export_csv(
             v.os or '',
             v.os_version or '',
             v.screen_resolution or '',
+            v.viewport_size or '',
             v.timezone or '',
             v.language or '',
             v.platform or '',
@@ -848,6 +850,7 @@ async def export_json(
             'os': v.os,
             'os_version': v.os_version,
             'screen_resolution': v.screen_resolution,
+            'viewport_size': v.viewport_size,
             'timezone': v.timezone,
             'language': v.language,
             'platform': v.platform,
@@ -936,7 +939,7 @@ async def export_excel(
     headers = [
         'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
-        '屏幕分辨率', '时区', '语言', '平台',
+        '屏幕分辨率', '视口大小', '时区', '语言', '平台',
         '停留时间(秒)', '滚动深度(%)', '鼠标移动',
         '是否机器人', '是否代理', '真实性评分', '指纹哈希',
         '页面URL', '来源'
@@ -962,18 +965,19 @@ async def export_excel(
         ws.cell(row=row_num, column=9, value=v.os or '')
         ws.cell(row=row_num, column=10, value=v.os_version or '')
         ws.cell(row=row_num, column=11, value=v.screen_resolution or '')
-        ws.cell(row=row_num, column=12, value=v.timezone or '')
-        ws.cell(row=row_num, column=13, value=v.language or '')
-        ws.cell(row=row_num, column=14, value=v.platform or '')
-        ws.cell(row=row_num, column=15, value=v.stay_duration or 0)
-        ws.cell(row=row_num, column=16, value=v.scroll_depth or 0)
-        ws.cell(row=row_num, column=17, value=v.mouse_movements or 0)
-        ws.cell(row=row_num, column=18, value='是' if v.is_bot else '否')
-        ws.cell(row=row_num, column=19, value='是' if v.is_proxy else '否')
-        ws.cell(row=row_num, column=20, value=v.authenticity_score or 0)
-        ws.cell(row=row_num, column=21, value=v.fingerprint_hash or '')
-        ws.cell(row=row_num, column=22, value=v.page_url or '')
-        ws.cell(row=row_num, column=23, value=v.referrer or '')
+        ws.cell(row=row_num, column=12, value=v.viewport_size or '')
+        ws.cell(row=row_num, column=13, value=v.timezone or '')
+        ws.cell(row=row_num, column=14, value=v.language or '')
+        ws.cell(row=row_num, column=15, value=v.platform or '')
+        ws.cell(row=row_num, column=16, value=v.stay_duration or 0)
+        ws.cell(row=row_num, column=17, value=v.scroll_depth or 0)
+        ws.cell(row=row_num, column=18, value=v.mouse_movements or 0)
+        ws.cell(row=row_num, column=19, value='是' if v.is_bot else '否')
+        ws.cell(row=row_num, column=20, value='是' if v.is_proxy else '否')
+        ws.cell(row=row_num, column=21, value=v.authenticity_score or 0)
+        ws.cell(row=row_num, column=22, value=v.fingerprint_hash or '')
+        ws.cell(row=row_num, column=23, value=v.page_url or '')
+        ws.cell(row=row_num, column=24, value=v.referrer or '')
 
     # 自动调整列宽
     for column in ws.columns:
