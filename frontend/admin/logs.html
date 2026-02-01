@@ -244,12 +244,85 @@
                         </div>
 
                         <div>
+                            <h3>硬件信息</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>设备内存:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.device_memory ? visit.device_memory + ' GB' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>CPU核心数:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.hardware_concurrency || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>颜色深度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.color_depth ? visit.color_depth + ' bit' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>像素比:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.pixel_ratio || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>最大触点数:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.max_touch_points != null ? visit.max_touch_points : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>WebGL供应商:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.webgl_vendor || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>WebGL渲染器:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.webgl_renderer || '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>网络信息</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>网络类型:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.connection_type || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>下行速度:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.connection_downlink ? visit.connection_downlink + ' Mbps' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>网络延迟:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.connection_rtt ? visit.connection_rtt + ' ms' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>省流量模式:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.connection_save_data != null ? Format.boolean(visit.connection_save_data) : '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>浏览器功能</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Cookie启用:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.cookies_enabled != null ? Format.boolean(visit.cookies_enabled) : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>DNT启用:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.do_not_track != null ? Format.boolean(visit.do_not_track) : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>PDF查看器:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.pdf_viewer_enabled != null ? Format.boolean(visit.pdf_viewer_enabled) : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>localStorage:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.local_storage_enabled != null ? Format.boolean(visit.local_storage_enabled) : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>sessionStorage:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.session_storage_enabled != null ? Format.boolean(visit.session_storage_enabled) : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>IndexedDB:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.indexed_db_enabled != null ? Format.boolean(visit.indexed_db_enabled) : '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
                             <h3>浏览器指纹</h3>
                             <table style="width:100%; border-collapse: collapse;">
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Canvas:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.canvas_fingerprint || '-'}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>WebGL:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.webgl_fingerprint || '-'}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>字体哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.fonts_hash || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>音频指纹:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.audio_fingerprint || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>插件哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.plugins_hash || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>媒体设备哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.media_devices_hash || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>WebRTC哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.webrtc_hash || '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>语音列表哈希:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.speech_voices_hash || '-'}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>综合指纹:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.fingerprint_hash}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>电池信息 ${visit.battery_level != null ? '🔋' : '⚡ 不支持'}</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                ${visit.battery_level != null ? `
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>充电状态:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.battery_charging ? '⚡ 充电中' : '🔋 未充电'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>电量:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.battery_level}%</td></tr>
+                                ${visit.battery_charging_time != null ? `<tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>充满时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Math.round(visit.battery_charging_time / 60)} 分钟</td></tr>` : ''}
+                                ${visit.battery_discharging_time != null ? `<tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>剩余时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Math.round(visit.battery_discharging_time / 60)} 分钟</td></tr>` : ''}
+                                ` : `
+                                <tr><td colspan="2" style="padding:8px; text-align:center; color:#999;">浏览器不支持 Battery API</td></tr>
+                                `}
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>性能指标</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>页面加载时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.page_load_time ? visit.page_load_time + ' ms' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>DOM解析时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.dom_parse_time ? visit.dom_parse_time + ' ms' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>DNS查询时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.dns_time ? visit.dns_time + ' ms' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>TCP连接时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.tcp_time ? visit.tcp_time + ' ms' : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>首字节时间(TTFB):</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ttfb ? visit.ttfb + ' ms' : '-'}</td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3>检测结果</h3>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>广告拦截器:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ad_blocker_detected != null ? (visit.ad_blocker_detected ? '🚫 检测到' : '✅ 未检测到') : '-'}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>Headless浏览器:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.is_headless != null ? (visit.is_headless ? '🤖 是' : '✅ 否') : '-'}</td></tr>
                             </table>
                         </div>
 
