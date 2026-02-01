@@ -48,6 +48,7 @@ class Visit(Base):
 
     # 浏览器指纹
     screen_resolution = Column(String(20), comment="屏幕分辨率")
+    viewport_size = Column(String(20), comment="视口大小")
     timezone = Column(String(50), comment="时区")
     language = Column(String(10), comment="语言")
     platform = Column(String(50), comment="平台")

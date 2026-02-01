@@ -91,6 +91,7 @@ async def create_visit(
         is_bot=ua_info["is_bot"],
         # 浏览器指纹
         screen_resolution=visit_data.screen_resolution,
+        viewport_size=visit_data.viewport_size,
         timezone=visit_data.timezone,
         language=visit_data.language,
         platform=visit_data.platform,

@@ -17,6 +17,7 @@ class VisitCreate(BaseModel):
 
     # 浏览器指纹
     screen_resolution: Optional[str] = Field(None, description="屏幕分辨率 (如 1920x1080)")
+    viewport_size: Optional[str] = Field(None, description="视口大小 (如 1366x768)")
     timezone: Optional[str] = Field(None, description="时区 (如 Asia/Shanghai)")
     language: Optional[str] = Field(None, description="语言 (如 zh-CN)")
     platform: Optional[str] = Field(None, description="平台 (如 Win32)")

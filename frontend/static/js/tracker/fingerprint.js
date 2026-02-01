@@ -183,6 +183,7 @@ const FingerprintCollector = {
       webgl_fingerprint: this.getWebGLFingerprint(),
       fonts_hash: this.getFontsHash(),
       screen_resolution: `${screen.width}x${screen.height}`,
+      viewport_size: `${window.innerWidth}x${window.innerHeight}`,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: navigator.language,
       platform: navigator.platform,
