@@ -587,33 +587,46 @@ const FingerprintCollector = {
 
   /**
    * 检测是否为 Headless 浏览器
+   * 只使用高置信度检测项，避免误报
    * @returns {boolean} 是否可能是 Headless
    */
   detectHeadless() {
     try {
-      // 检测各种 Headless 特征
+      // 只保留高置信度检测项（几乎不会误报）
       const checks = {
-        // 检测 WebDriver (最可靠的检测)
+        // 检测 WebDriver - 自动化工具会设置此标志
+        // 正常浏览器返回 undefined 或 false
         webdriver: navigator.webdriver === true,
-        // 检测 Chrome Headless UA
+
+        // 检测 Chrome Headless UA 字符串
+        // 正常 Chrome 的 UA 不包含 "HeadlessChrome"
         chromeHeadless: /HeadlessChrome/.test(navigator.userAgent),
-        // 检测 Phantom
-        phantom: !!window._phantom || !!window.callPhantom,
-        // 检测 Nightmare
+
+        // 检测 PhantomJS 特征
+        phantom: !!(window._phantom || window.callPhantom),
+
+        // 检测 Nightmare.js 特征
         nightmare: !!window.__nightmare,
-        // 检测 Selenium
-        selenium: !!window.document.__selenium_unwrapped || !!window.document.__webdriver_evaluate,
-        // 检测 Puppeteer
+
+        // 检测 Selenium 特征
+        selenium: !!(document.__selenium_unwrapped || document.__webdriver_evaluate || document.__selenium_evaluate),
+
+        // 检测 Puppeteer 特征
         puppeteer: !!window.__puppeteer_evaluation_script__,
-        // 检测缺少语言 (可疑但不是决定性的)
-        noLanguages: !navigator.languages || navigator.languages.length === 0,
-        // 检测 permissions API 异常 (Headless 通常返回异常)
-        permissionsAnomaly: false
+
+        // 检测 Playwright 特征
+        playwright: !!window.__playwright || !!window.__pw_manual,
+
+        // 检测 WebDriver 控制标志 (Chrome DevTools Protocol)
+        cdp: !!window.cdc_adoQpoasnfa76pfcZLmcfl_Array ||
+             !!window.cdc_adoQpoasnfa76pfcZLmcfl_Promise ||
+             !!window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol
       };
 
-      // 注意：以下检测项容易误报，已移除：
-      // - chromeAuto: window.chrome.runtime 在普通网页中本来就不存在
-      // - noPlugins: 现代浏览器出于隐私考虑可能不暴露插件列表
+      // 已移除容易误报的检测项：
+      // - chromeAuto: window.chrome.runtime 在普通网页中不存在
+      // - noPlugins: 现代浏览器可能不暴露插件列表
+      // - noLanguages: 某些隐私设置可能导致空数组
 
       return Object.values(checks).some(v => v === true);
     } catch (e) {
