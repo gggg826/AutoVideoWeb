@@ -593,9 +593,9 @@ const FingerprintCollector = {
     try {
       // 检测各种 Headless 特征
       const checks = {
-        // 检测 WebDriver
+        // 检测 WebDriver (最可靠的检测)
         webdriver: navigator.webdriver === true,
-        // 检测 Chrome Headless
+        // 检测 Chrome Headless UA
         chromeHeadless: /HeadlessChrome/.test(navigator.userAgent),
         // 检测 Phantom
         phantom: !!window._phantom || !!window.callPhantom,
@@ -605,13 +605,15 @@ const FingerprintCollector = {
         selenium: !!window.document.__selenium_unwrapped || !!window.document.__webdriver_evaluate,
         // 检测 Puppeteer
         puppeteer: !!window.__puppeteer_evaluation_script__,
-        // 检测 Chrome 自动化
-        chromeAuto: !!window.chrome && !window.chrome.runtime,
-        // 检测缺少 plugins
-        noPlugins: navigator.plugins.length === 0,
-        // 检测缺少语言
-        noLanguages: !navigator.languages || navigator.languages.length === 0
+        // 检测缺少语言 (可疑但不是决定性的)
+        noLanguages: !navigator.languages || navigator.languages.length === 0,
+        // 检测 permissions API 异常 (Headless 通常返回异常)
+        permissionsAnomaly: false
       };
+
+      // 注意：以下检测项容易误报，已移除：
+      // - chromeAuto: window.chrome.runtime 在普通网页中本来就不存在
+      // - noPlugins: 现代浏览器出于隐私考虑可能不暴露插件列表
 
       return Object.values(checks).some(v => v === true);
     } catch (e) {

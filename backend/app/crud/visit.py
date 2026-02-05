@@ -35,6 +35,9 @@ async def create_visit(
     # 获取 IP 地理位置
     geo_data = await get_ip_geolocation(ip_address)
 
+    # Temporary logging for debugging geolocation
+    print(f"DEBUG: Received IP: {ip_address}, Geolocation Result: {geo_data}")
+
     # 生成指纹哈希
     fingerprint_hash = generate_fingerprint_hash(
         visit_data.canvas_fingerprint,
