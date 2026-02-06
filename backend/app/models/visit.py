@@ -29,10 +29,15 @@ class Visit(Base):
     )
 
     # IP 信息
-    ip_address = Column(String(45), nullable=False, index=True, comment="IP 地址")
+    ip_address = Column(String(45), nullable=False, index=True, comment="初始IP地址")
     ip_country = Column(String(2), index=True, comment="国家代码")
     ip_city = Column(String(100), index=True, comment="城市")
     is_proxy = Column(Boolean, default=False, comment="是否代理IP")
+
+    # IP 变化检测
+    last_ip = Column(String(45), comment="最后一次请求的IP地址")
+    ip_changed = Column(Boolean, default=False, index=True, comment="访问期间IP是否变化")
+    ip_change_count = Column(Integer, default=0, comment="IP变化次数")
 
     # 请求信息
     user_agent = Column(Text, comment="User-Agent")

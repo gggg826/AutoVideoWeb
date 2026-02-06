@@ -51,6 +51,7 @@ async def track_visit(
 @router.post("/behavior", summary="更新行为数据")
 async def update_behavior(
     behavior_data: BehaviorUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -62,8 +63,12 @@ async def update_behavior(
     - 鼠标移动轨迹（采样）
 
     这些数据用于评估访问的真实性
+    同时检测 IP 是否发生变化
     """
-    visit = await visit_crud.update_behavior(db, behavior_data)
+    # 获取当前请求的 IP
+    current_ip = get_client_ip(request)
+
+    visit = await visit_crud.update_behavior(db, behavior_data, current_ip)
 
     if not visit:
         raise HTTPException(status_code=404, detail="访问记录不存在")

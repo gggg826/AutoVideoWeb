@@ -135,6 +135,9 @@ async def get_visit_detail(
 
             # IP 信息
             "ip_address": visit.ip_address,
+            "last_ip": visit.last_ip,
+            "ip_changed": visit.ip_changed,
+            "ip_change_count": visit.ip_change_count,
             "ip_country": visit.ip_country,
             "ip_city": visit.ip_city,
             "is_proxy": visit.is_proxy,
@@ -800,7 +803,7 @@ async def export_csv(
 
     # 写入表头
     writer.writerow([
-        'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
+        'ID', '访问时间', '初始IP', '最后IP', 'IP变化', 'IP变化次数', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
         '屏幕分辨率', '视口大小', '时区', '语言', '平台',
         # WebGL 详细
@@ -837,6 +840,9 @@ async def export_csv(
             v.id,
             v.timestamp.isoformat() if v.timestamp else '',
             v.ip_address or '',
+            v.last_ip or v.ip_address or '',
+            '是' if v.ip_changed else '否',
+            v.ip_change_count or 0,
             v.ip_country or '',
             v.ip_city or '',
             v.device_type or '',
@@ -975,6 +981,9 @@ async def export_json(
             'visit_id': v.visit_id,
             'timestamp': v.timestamp.isoformat() if v.timestamp else None,
             'ip_address': v.ip_address,
+            'last_ip': v.last_ip,
+            'ip_changed': v.ip_changed,
+            'ip_change_count': v.ip_change_count,
             'ip_country': v.ip_country,
             'ip_city': v.ip_city,
             'device_type': v.device_type,
@@ -1123,7 +1132,7 @@ async def export_excel(
 
     # 定义表头
     headers = [
-        'ID', '访问时间', 'IP地址', '国家', '城市', '设备类型',
+        'ID', '访问时间', '初始IP', '最后IP', 'IP变化', 'IP变化次数', '国家', '城市', '设备类型',
         '浏览器', '浏览器版本', '操作系统', 'OS版本',
         '屏幕分辨率', '视口大小', '时区', '语言', '平台',
         # WebGL 详细
@@ -1168,6 +1177,9 @@ async def export_excel(
             v.id,
             v.timestamp.isoformat() if v.timestamp else '',
             v.ip_address or '',
+            v.last_ip or v.ip_address or '',
+            '是' if v.ip_changed else '否',
+            v.ip_change_count or 0,
             v.ip_country or '',
             v.ip_city or '',
             v.device_type or '',

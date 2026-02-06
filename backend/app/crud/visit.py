@@ -187,7 +187,8 @@ async def create_visit(
 
 async def update_behavior(
     db: AsyncSession,
-    behavior_data: BehaviorUpdate
+    behavior_data: BehaviorUpdate,
+    current_ip: str = None
 ) -> Optional[Visit]:
     """
     更新访问记录的行为数据
@@ -195,6 +196,7 @@ async def update_behavior(
     Args:
         db: 数据库会话
         behavior_data: 行为数据
+        current_ip: 当前请求的 IP 地址（用于检测 IP 变化）
 
     Returns:
         Optional[Visit]: 更新后的访问记录，如果未找到则返回 None
@@ -206,6 +208,23 @@ async def update_behavior(
 
     if not visit:
         return None
+
+    # 检测 IP 变化
+    if current_ip:
+        # 获取原始 IP（初次访问时的 IP）
+        original_ip = visit.ip_address
+        # 获取上次记录的 IP（如果有）
+        last_recorded_ip = visit.last_ip or original_ip
+
+        # 如果当前 IP 与上次记录的 IP 不同，说明发生了变化
+        if current_ip != last_recorded_ip:
+            visit.ip_changed = True
+            visit.ip_change_count = (visit.ip_change_count or 0) + 1
+            visit.last_ip = current_ip
+            print(f"[IP变化] visit_id={visit.visit_id}, 原始IP={original_ip}, 上次IP={last_recorded_ip}, 当前IP={current_ip}, 变化次数={visit.ip_change_count}")
+        elif not visit.last_ip:
+            # 首次行为更新，记录当前 IP
+            visit.last_ip = current_ip
 
     # 更新行为数据
     if behavior_data.stay_duration is not None:

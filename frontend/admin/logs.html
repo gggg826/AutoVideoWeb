@@ -223,7 +223,9 @@
                             <table style="width:100%; border-collapse: collapse;">
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>访问ID:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.visit_id}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>访问时间:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${Format.datetime(visit.timestamp)}</td></tr>
-                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>IP 地址:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_address}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>初始IP:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_address}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>最后IP:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.last_ip || visit.ip_address}</td></tr>
+                                <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>IP变化:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_changed ? '<span style="color:#f56565">⚠️ 是（变化 ' + (visit.ip_change_count || 1) + ' 次）</span>' : '<span style="color:#48bb78">✅ 否</span>'}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>位置:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.ip_country || '-'} ${visit.ip_city || ''}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>页面URL:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.page_url}</td></tr>
                                 <tr><td style="padding:8px; border-bottom:1px solid #eee;"><strong>来源:</strong></td><td style="padding:8px; border-bottom:1px solid #eee;">${visit.referrer || '-'}</td></tr>
