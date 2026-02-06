@@ -27,7 +27,13 @@ async def init_database():
         data_dir.mkdir(parents=True, exist_ok=True)
 
     async with engine.begin() as conn:
+        # Drop all tables first
+        print("[INFO] Dropping existing tables...")
+        await conn.run_sync(Base.metadata.drop_all)
+        print("[OK] All tables dropped")
+
         # Create all tables
+        print("[INFO] Creating tables...")
         await conn.run_sync(Base.metadata.create_all)
 
     print("[OK] Database initialized successfully!")
