@@ -18,9 +18,9 @@ async def init_database():
     """Initialize database"""
     print("[INFO] Initializing database...")
 
-    # Ensure data directory exists
-    project_root = Path(__file__).parent.parent.parent
-    data_dir = project_root / "data"
+    # Ensure data directory exists (relative to backend folder)
+    backend_root = Path(__file__).parent.parent
+    data_dir = backend_root / "data"
 
     if not data_dir.exists():
         print(f"[INFO] Creating data directory: {data_dir}")
